@@ -110,7 +110,7 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
             <h3 className="font-semibold text-gray-900 mb-2">Availability</h3>
             <div className="flex items-center space-x-2 text-gray-600">
               <Calendar className="w-4 h-4" />
-              <span>Available from {new Date(product.availability.startDate).toLocaleDateString()}</span>
+              <span>Available from {product.availability?.startDate ? new Date(product.availability.startDate).toLocaleDateString() : 'Now'}</span>
             </div>
           </div>
 

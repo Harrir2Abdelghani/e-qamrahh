@@ -18,6 +18,8 @@ export interface Product {
     startDate: string;
     endDate: string;
   };
+  featured: boolean;
+  condition: "excellent" | "good" | "fair";
 }
 
 export interface User {

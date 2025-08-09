@@ -22,7 +22,9 @@ const defaultProducts: Product[] = [
     views: 245,
     bookings: 18,
     tags: ["photography", "professional", "events"],
-    availability: { startDate: "2024-02-01", endDate: "2024-12-31" }
+    availability: { startDate: "2024-02-01", endDate: "2024-12-31" },
+    featured: false,
+    condition: "excellent"
   },
   {
     id: "2",
@@ -40,7 +42,9 @@ const defaultProducts: Product[] = [
     views: 189,
     bookings: 22,
     tags: ["construction", "DIY", "professional"],
-    availability: { startDate: "2024-02-01", endDate: "2024-12-31" }
+    availability: { startDate: "2024-02-01", endDate: "2024-12-31" },
+    featured: false,
+    condition: "excellent"
   },
   {
     id: "3",
@@ -58,7 +62,9 @@ const defaultProducts: Product[] = [
     views: 312,
     bookings: 8,
     tags: ["wedding", "corporate", "luxury"],
-    availability: { startDate: "2024-02-01", endDate: "2024-12-31" }
+    availability: { startDate: "2024-02-01", endDate: "2024-12-31" },
+    featured: true,
+    condition: "excellent"
   },
   {
     id: "4",
@@ -76,7 +82,9 @@ const defaultProducts: Product[] = [
     views: 156,
     bookings: 15,
     tags: ["outdoor", "adventure", "fitness"],
-    availability: { startDate: "2024-02-01", endDate: "2024-12-31" }
+    availability: { startDate: "2024-02-01", endDate: "2024-12-31" },
+    featured: false,
+    condition: "good"
   },
   {
     id: "5",
@@ -94,7 +102,9 @@ const defaultProducts: Product[] = [
     views: 278,
     bookings: 12,
     tags: ["music", "events", "professional"],
-    availability: { startDate: "2024-02-01", endDate: "2024-12-31" }
+    availability: { startDate: "2024-02-01", endDate: "2024-12-31" },
+    featured: true,
+    condition: "excellent"
   },
   {
     id: "6",
@@ -112,7 +122,9 @@ const defaultProducts: Product[] = [
     views: 203,
     bookings: 9,
     tags: ["fashion", "formal", "designer"],
-    availability: { startDate: "2024-02-01", endDate: "2024-12-31" }
+    availability: { startDate: "2024-02-01", endDate: "2024-12-31" },
+    featured: false,
+    condition: "excellent"
   }
 ];
 

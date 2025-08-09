@@ -1,5 +1,7 @@
 "use client";
+"use client";
 
+import { Suspense } from "react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +28,21 @@ import {
 } from "lucide-react";
 
 export default function QamrahLandingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading amazing products...</p>
+        </div>
+      </div>
+    }>
+      <QamrahContent />
+    </Suspense>
+  );
+}
+
+function QamrahContent() {
   const { products, loading, incrementViews } = useProducts();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
