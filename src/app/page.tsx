@@ -82,9 +82,9 @@ export default function QamrahLandingPage() {
   };
 
   const stats = [
-    { label: "Active Products", value: products.filter(p => p.status === "active").length, icon: Globe },
+    { label: "Active Products", value: products.filter(p => p.status === "active").length.toString(), icon: Globe },
     { label: "Happy Users", value: "25,000+", icon: Users },
-    { label: "Total Bookings", value: products.reduce((sum, p) => sum + p.bookings, 0), icon: TrendingUp },
+    { label: "Total Bookings", value: products.reduce((sum, p) => sum + (p.bookings || 0), 0).toString(), icon: TrendingUp },
     { label: "Average Rating", value: "4.8", icon: Award },
   ];
 

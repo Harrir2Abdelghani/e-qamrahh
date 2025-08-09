@@ -108,7 +108,7 @@ export function ProductCard({ product, onView, onEdit, onDelete, showActions = f
         </div>
 
         <div className="flex flex-wrap gap-1">
-          {product.tags.slice(0, 3).map((tag, index) => (
+          {(product.tags || []).slice(0, 3).map((tag, index) => (
             <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
               {tag}
             </Badge>

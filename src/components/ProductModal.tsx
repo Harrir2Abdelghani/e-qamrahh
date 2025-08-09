@@ -98,7 +98,7 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
           <div>
             <h3 className="font-semibold text-gray-900 mb-2">Tags</h3>
             <div className="flex flex-wrap gap-2">
-              {product.tags.map((tag, index) => (
+              {(product.tags || []).map((tag, index) => (
                 <Badge key={index} variant="outline" className="text-sm">
                   {tag}
                 </Badge>
