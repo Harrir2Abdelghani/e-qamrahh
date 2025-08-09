@@ -54,8 +54,8 @@ export default function AdminDashboard() {
   const analytics: Analytics = useMemo(() => ({
     totalProducts: products.length,
     totalUsers: 8500,
-    totalRevenue: products.reduce((sum, p) => sum + (p.price * p.bookings), 0),
-    activeRentals: products.reduce((sum, p) => sum + p.bookings, 0),
+    totalRevenue: products.reduce((sum, p) => sum + (p.price * (p.bookings || 0)), 0),
+    activeRentals: products.reduce((sum, p) => sum + (p.bookings || 0), 0),
     monthlyGrowth: 23.5,
     topCategories: [
       { name: "Electronics", count: products.filter(p => p.category === "Electronics").length },
@@ -546,7 +546,7 @@ export default function AdminDashboard() {
               <div>
                 <strong>Tags:</strong>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {viewProduct.tags.map((tag, index) => (
+                  {(viewProduct.tags || []).map((tag, index) => (
                     <Badge key={index} variant="outline">{tag}</Badge>
                   ))}
                 </div>
@@ -585,7 +585,7 @@ function ProductForm({
     const productData = {
       ...formData,
       price: parseFloat(formData.price),
-      tags: formData.tags.split(",").map(tag => tag.trim()).filter(Boolean),
+      tags: formData.tags ? formData.tags.split(",").map(tag => tag.trim()).filter(Boolean) : [],
       availability: {
         startDate: "2024-02-01",
         endDate: "2024-12-31"
