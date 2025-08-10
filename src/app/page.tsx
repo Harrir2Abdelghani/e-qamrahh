@@ -1,16 +1,17 @@
 "use client";
-"use client";
 
-import { Suspense } from "react";
-import { useState, useMemo } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductModal } from "@/components/ProductModal";
 import { SearchFilters } from "@/components/SearchFilters";
+import { AuthModal } from "@/components/AuthModal";
 import { useProducts } from "@/hooks/useProducts";
+import { useAuthProvider } from "@/hooks/useAuth";
 import { Product, FilterOptions } from "@/types";
+import { StorageManager, STORAGE_KEYS } from "@/lib/storage";
 import {
   Shield,
   Clock,
@@ -25,15 +26,37 @@ import {
   Sparkles,
   Menu,
   X,
+  User,
+  LogOut,
+  Heart,
+  ShoppingCart,
+  Bell,
+  Search,
+  MapPin,
+  Calendar,
+  DollarSign,
+  Filter,
+  SortAsc,
+  Grid,
+  List,
+  Bookmark,
+  Share2,
+  MessageCircle,
+  Phone,
+  Mail,
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin
 } from "lucide-react";
 
 export default function QamrahLandingPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading amazing products...</p>
+          <div className="w-16 h-16 border-4 border-indigo-300 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading amazing products...</p>
         </div>
       </div>
     }>
@@ -43,14 +66,22 @@ export default function QamrahLandingPage() {
 }
 
 function QamrahContent() {
-  const { products, loading, incrementViews } = useProducts();
+  const { products, loading, incrementViews, addToFavorites, removeFromFavorites, getFavorites, addRecentView, getAnalytics } = useProducts();
+  const { user, isAuthenticated, logout } = useAuthProvider();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Partial<FilterOptions>>({});
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
+
+  const storage = StorageManager.getInstance();
+  const favorites = getFavorites();
+  const analytics = getAnalytics();
 
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    let filtered = products.filter((product) => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -59,7 +90,8 @@ function QamrahContent() {
           product.description.toLowerCase().includes(query) ||
           product.category.toLowerCase().includes(query) ||
           product.location.toLowerCase().includes(query) ||
-          product.tags.some(tag => tag.toLowerCase().includes(query));
+          product.owner.toLowerCase().includes(query) ||
+          (product.tags || []).some(tag => tag.toLowerCase().includes(query));
         
         if (!matchesSearch) return false;
       }
@@ -84,13 +116,58 @@ function QamrahContent() {
         return false;
       }
 
+      // Condition filter
+      if (filters.condition && product.condition !== filters.condition) {
+        return false;
+      }
+
+      // Status filter (only show active products on landing page)
+      if (product.status !== "active") {
+        return false;
+      }
+
       return true;
     });
+
+    // Sorting
+    if (filters.sortBy) {
+      filtered.sort((a, b) => {
+        const order = filters.sortOrder === 'desc' ? -1 : 1;
+        switch (filters.sortBy) {
+          case 'price':
+            return (a.price - b.price) * order;
+          case 'rating':
+            return (a.rating - b.rating) * order;
+          case 'newest':
+            return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * order;
+          case 'popular':
+            return (a.views - b.views) * order;
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return filtered;
   }, [products, searchQuery, filters]);
 
   const handleProductView = (product: Product) => {
     incrementViews(product.id);
+    addRecentView(product.id);
     setSelectedProduct(product);
+  };
+
+  const handleFavoriteToggle = (productId: string) => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (favorites.includes(productId)) {
+      removeFromFavorites(productId);
+    } else {
+      addToFavorites(productId);
+    }
   };
 
   const clearFilters = () => {
@@ -99,35 +176,55 @@ function QamrahContent() {
   };
 
   const stats = [
-    { label: "Active Products", value: products.filter(p => p.status === "active").length.toString(), icon: Globe },
-    { label: "Happy Users", value: "25,000+", icon: Users },
-    { label: "Total Bookings", value: products.reduce((sum, p) => sum + (p.bookings || 0), 0).toString(), icon: TrendingUp },
-    { label: "Average Rating", value: "4.8", icon: Award },
+    { 
+      label: "Active Products", 
+      value: analytics.activeProducts.toString(), 
+      icon: Globe,
+      color: "from-blue-500 to-blue-600"
+    },
+    { 
+      label: "Happy Users", 
+      value: analytics.totalUsers.toLocaleString(), 
+      icon: Users,
+      color: "from-emerald-500 to-emerald-600"
+    },
+    { 
+      label: "Total Bookings", 
+      value: analytics.totalBookings.toString(), 
+      icon: TrendingUp,
+      color: "from-purple-500 to-purple-600"
+    },
+    { 
+      label: "Average Rating", 
+      value: analytics.averageRating.toFixed(1), 
+      icon: Award,
+      color: "from-amber-500 to-amber-600"
+    },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading amazing products...</p>
+          <div className="w-16 h-16 border-4 border-indigo-300 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading amazing products...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
                 <Globe className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   Qamrah
                 </span>
                 <p className="text-xs text-gray-500 -mt-1">Rent Anything, Anywhere</p>
@@ -136,22 +233,46 @@ function QamrahContent() {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+              <a href="#features" className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">
                 Features
               </a>
-              <a href="#products" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+              <a href="#products" className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">
                 Products
               </a>
-              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+              <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">
                 How it Works
               </a>
-              <a href="/admin" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
-                Admin
-              </a>
-              <Button className="bg-gray-900 hover:bg-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Get Started
-              </Button>
+              {isAuthenticated && user?.role === 'admin' && (
+                <a href="/admin" className="text-gray-600 hover:text-indigo-600 transition-colors font-medium">
+                  Admin
+                </a>
+              )}
+              
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-4">
+                  <Button variant="ghost" size="sm">
+                    <Heart className="w-4 h-4 mr-2" />
+                    Favorites
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <Bell className="w-4 h-4" />
+                  </Button>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium">{user?.name}</span>
+                    <Button variant="ghost" size="sm" onClick={logout}>
+                      <LogOut className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button 
+                  onClick={() => setShowAuthModal(true)}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -170,21 +291,28 @@ function QamrahContent() {
           {showMobileMenu && (
             <div className="lg:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
               <div className="flex flex-col space-y-3">
-                <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#features" className="text-gray-600 hover:text-indigo-600 transition-colors">
                   Features
                 </a>
-                <a href="#products" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#products" className="text-gray-600 hover:text-indigo-600 transition-colors">
                   Products
                 </a>
-                <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 transition-colors">
                   How it Works
                 </a>
-                <a href="/admin" className="text-gray-600 hover:text-gray-900 transition-colors">
-                  Admin
-                </a>
-                <Button className="bg-gray-900 hover:bg-gray-800 text-white w-full">
-                  Get Started
-                </Button>
+                {isAuthenticated && user?.role === 'admin' && (
+                  <a href="/admin" className="text-gray-600 hover:text-indigo-600 transition-colors">
+                    Admin
+                  </a>
+                )}
+                {!isAuthenticated && (
+                  <Button 
+                    onClick={() => setShowAuthModal(true)}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white w-full"
+                  >
+                    Sign In
+                  </Button>
+                )}
               </div>
             </div>
           )}
@@ -194,12 +322,12 @@ function QamrahContent() {
       {/* Hero Section */}
       <section className="container mx-auto px-6 py-20">
         <div className="text-center max-w-5xl mx-auto">
-          <Badge className="mb-8 bg-gray-900 text-white border-0 px-6 py-3 text-sm font-medium shadow-lg">
-            ⚡ Trusted by 25,000+ global renters
+          <Badge className="mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0 px-6 py-3 text-sm font-medium shadow-lg">
+            ⚡ Trusted by {analytics.totalUsers.toLocaleString()}+ global renters
           </Badge>
 
           <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
-            <span className="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
               Rent Anything,
             </span>
             <br />
@@ -213,7 +341,8 @@ function QamrahContent() {
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
             <Button
               size="lg"
-              className="bg-gray-900 hover:bg-gray-800 text-white text-lg px-10 py-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300"
+              onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-lg px-10 py-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300"
             >
               <Zap className="mr-3 w-6 h-6" />
               Start Exploring
@@ -231,8 +360,8 @@ function QamrahContent() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <stat.icon className="w-6 h-6 text-gray-700" />
+                <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg`}>
+                  <stat.icon className="w-6 h-6 text-white" />
                 </div>
                 <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
                 <div className="text-sm text-gray-600">{stat.label}</div>
@@ -296,7 +425,7 @@ function QamrahContent() {
       </section>
 
       {/* Products Section */}
-      <section id="products" className="py-20 bg-gray-50">
+      <section id="products" className="py-20 bg-gradient-to-br from-gray-50 to-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-6 text-gray-900">
@@ -307,38 +436,130 @@ function QamrahContent() {
             </p>
           </div>
 
-          <SearchFilters
-            onSearch={setSearchQuery}
-            onFilter={setFilters}
-            onClearFilters={clearFilters}
-          />
+          {/* Search and Filters */}
+          <div className="mb-8">
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              {/* Search Bar */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search products, categories, or locations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 text-lg border-2 border-gray-200 focus:border-indigo-500 rounded-xl outline-none transition-colors"
+                />
+              </div>
 
-          <div className="mt-8">
-            {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onView={handleProductView}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-                  No products found
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Try adjusting your search or filter criteria
-                </p>
-                <Button onClick={clearFilters} variant="outline">
-                  Clear Filters
+              {/* Filter Toggle */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center space-x-2"
+                >
+                  <Filter className="w-4 h-4" />
+                  <span>Filters</span>
                 </Button>
+
+                {/* View Mode Toggle */}
+                <div className="flex border border-gray-200 rounded-lg">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className="rounded-r-none"
+                  >
+                    <Grid className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="rounded-l-none"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {Object.keys(filters).length > 0 && (
+                  <Button
+                    variant="ghost"
+                    onClick={clearFilters}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Clear
+                  </Button>
+                )}
               </div>
+            </div>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <SearchFilters
+                onSearch={setSearchQuery}
+                onFilter={setFilters}
+                onClearFilters={clearFilters}
+              />
             )}
           </div>
+
+          {/* Results Summary */}
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-gray-600">
+              Showing {filteredProducts.length} of {products.filter(p => p.status === 'active').length} products
+            </p>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-500">Sort by:</span>
+              <select
+                value={`${filters.sortBy || 'newest'}-${filters.sortOrder || 'desc'}`}
+                onChange={(e) => {
+                  const [sortBy, sortOrder] = e.target.value.split('-');
+                  setFilters(prev => ({ ...prev, sortBy: sortBy as any, sortOrder: sortOrder as any }));
+                }}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1 outline-none focus:border-indigo-500"
+              >
+                <option value="newest-desc">Newest First</option>
+                <option value="popular-desc">Most Popular</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rating-desc">Highest Rated</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Products Grid */}
+          <div className={viewMode === 'grid' 
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" 
+            : "space-y-6"
+          }>
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onView={handleProductView}
+                onFavoriteToggle={handleFavoriteToggle}
+                isFavorite={favorites.includes(product.id)}
+                viewMode={viewMode}
+              />
+            ))}
+          </div>
+
+          {filteredProducts.length === 0 && (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                No products found
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Try adjusting your search or filter criteria
+              </p>
+              <Button onClick={clearFilters} variant="outline">
+                Clear Filters
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -376,7 +597,7 @@ function QamrahContent() {
               }
             ].map((step, index) => (
               <div key={index} className="text-center relative">
-                <div className="w-20 h-20 bg-gradient-to-br from-gray-900 to-gray-700 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold shadow-2xl">
+                <div className="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold shadow-2xl">
                   {step.step}
                 </div>
                 <div className="text-4xl mb-4">{step.icon}</div>
@@ -396,26 +617,27 @@ function QamrahContent() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-900 to-gray-800">
+      <section className="py-20 bg-gradient-to-br from-indigo-600 to-purple-600">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold mb-6 text-white">
             Ready to Start Your Rental Journey?
           </h2>
-          <p className="text-xl mb-10 text-gray-300 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl mb-10 text-indigo-100 max-w-3xl mx-auto leading-relaxed">
             Join thousands of people who are already saving money and discovering amazing products through Qamrah.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Button
               size="lg"
-              className="bg-white text-gray-900 hover:bg-gray-100 text-lg px-10 py-6 rounded-2xl shadow-xl"
+              onClick={() => !isAuthenticated ? setShowAuthModal(true) : document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-white text-indigo-600 hover:bg-gray-100 text-lg px-10 py-6 rounded-2xl shadow-xl"
             >
               <Zap className="mr-3 w-6 h-6" />
-              Start Renting Today
+              {isAuthenticated ? 'Start Renting Today' : 'Join Qamrah Now'}
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="text-lg px-10 py-6 rounded-2xl border-2 border-white text-white hover:bg-white hover:text-gray-900"
+              className="text-lg px-10 py-6 rounded-2xl border-2 border-white text-white hover:bg-white hover:text-indigo-600"
             >
               List Your Items
             </Button>
@@ -429,14 +651,28 @@ function QamrahContent() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
                   <Globe className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-xl font-bold">Qamrah</span>
               </div>
-              <p className="text-gray-400 leading-relaxed">
+              <p className="text-gray-400 leading-relaxed mb-6">
                 The trusted marketplace for renting anything you need, anywhere you are. Building communities through shared resources.
               </p>
+              <div className="flex space-x-4">
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  <Facebook className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  <Twitter className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  <Instagram className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  <Linkedin className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
 
             {[
@@ -468,8 +704,20 @@ function QamrahContent() {
             ))}
           </div>
 
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Qamrah. All rights reserved. Building a sustainable future through sharing.</p>
+          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400 mb-4 md:mb-0">
+              &copy; 2024 Qamrah. All rights reserved. Building a sustainable future through sharing.
+            </p>
+            <div className="flex items-center space-x-6 text-gray-400">
+              <div className="flex items-center space-x-2">
+                <Mail className="w-4 h-4" />
+                <span>hello@qamrah.com</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Phone className="w-4 h-4" />
+                <span>1-800-QAMRAH</span>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
@@ -479,6 +727,19 @@ function QamrahContent() {
         product={selectedProduct}
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
+        onFavoriteToggle={handleFavoriteToggle}
+        isFavorite={selectedProduct ? favorites.includes(selectedProduct.id) : false}
+        isAuthenticated={isAuthenticated}
+        onAuthRequired={() => setShowAuthModal(true)}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          // Refresh the page or update state as needed
+        }}
       />
     </div>
   );
