@@ -1,17 +1,22 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext } from "react";
-import { User } from "@/types";
-import { StorageManager, STORAGE_KEYS } from "@/lib/storage";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
+import { Database } from "@/types/database";
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface AuthContextType {
-  user: User | null;
+  user: Profile | null;
+  supabaseUser: SupabaseUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: Partial<User>) => Promise<boolean>;
-  logout: () => void;
-  updateProfile: (updates: Partial<User>) => void;
   loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ success: boolean; error?: string }>;
+  signOut: () => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => Promise<{ success: boolean; error?: string }>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,169 +30,199 @@ export function useAuth() {
 }
 
 export function useAuthProvider() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Profile | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const storage = StorageManager.getInstance();
 
-  useEffect(() => {
-    // Load user from storage on mount
-    const savedUser = storage.getItem<User | null>(STORAGE_KEYS.USER_PROFILE, null);
-    setUser(savedUser);
-    setLoading(false);
-  }, []);
+  // Fetch user profile
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock authentication - in real app, this would be an API call
-    if (email === "admin@qamrah.com" && password === "admin123") {
-      const adminUser: User = {
-        id: "admin-1",
-        name: "Admin User",
-        email: "admin@qamrah.com",
-        phone: "+1-555-0123",
-        avatar: "👨‍💼",
-        role: "admin",
-        joinedAt: new Date().toISOString(),
-        totalRentals: 0,
-        totalEarnings: 0,
-        rating: 5.0,
-        verified: true,
-        address: {
-          street: "123 Admin St",
-          city: "San Francisco",
-          state: "CA",
-          zipCode: "94105",
-          country: "USA"
-        },
-        preferences: {
-          notifications: true,
-          emailUpdates: true,
-          currency: "USD",
-          language: "en"
-        },
-        documents: {
-          idVerified: true,
-          phoneVerified: true,
-          emailVerified: true
-        }
-      };
-      
-      setUser(adminUser);
-      storage.setItem(STORAGE_KEYS.USER_PROFILE, adminUser);
-      setLoading(false);
-      return true;
-    } else if (email.includes("@") && password.length >= 6) {
-      // Regular user login
-      const regularUser: User = {
-        id: `user-${Date.now()}`,
-        name: email.split("@")[0],
-        email,
-        phone: "",
-        avatar: "👤",
-        role: "user",
-        joinedAt: new Date().toISOString(),
-        totalRentals: Math.floor(Math.random() * 10),
-        totalEarnings: 0,
-        rating: 4.5 + Math.random() * 0.5,
-        verified: false,
-        address: {
-          street: "",
-          city: "",
-          state: "",
-          zipCode: "",
-          country: "USA"
-        },
-        preferences: {
-          notifications: true,
-          emailUpdates: true,
-          currency: "USD",
-          language: "en"
-        },
-        documents: {
-          idVerified: false,
-          phoneVerified: false,
-          emailVerified: true
-        }
-      };
-      
-      setUser(regularUser);
-      storage.setItem(STORAGE_KEYS.USER_PROFILE, regularUser);
-      setLoading(false);
-      return true;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in fetchProfile:', error);
+      return null;
     }
-    
-    setLoading(false);
-    return false;
   };
 
-  const register = async (userData: Partial<User>): Promise<boolean> => {
-    setLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      name: userData.name || "",
-      email: userData.email || "",
-      phone: userData.phone || "",
-      avatar: "👤",
-      role: "user",
-      joinedAt: new Date().toISOString(),
-      totalRentals: 0,
-      totalEarnings: 0,
-      rating: 5.0,
-      verified: false,
-      address: {
-        street: "",
-        city: "",
-        state: "",
-        zipCode: "",
-        country: "USA"
-      },
-      preferences: {
-        notifications: true,
-        emailUpdates: true,
-        currency: "USD",
-        language: "en"
-      },
-      documents: {
-        idVerified: false,
-        phoneVerified: false,
-        emailVerified: false
+  // Initialize auth state
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+
+        if (session?.user && mounted) {
+          setSupabaseUser(session.user);
+          const profile = await fetchProfile(session.user.id);
+          if (profile && mounted) {
+            setUser(profile);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
+
+    initializeAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        setSupabaseUser(session?.user ?? null);
+
+        if (session?.user) {
+          const profile = await fetchProfile(session.user.id);
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const profile = await fetchProfile(data.user.id);
+        setUser(profile);
+        setSupabaseUser(data.user);
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'An unexpected error occurred' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string, fullName: string, phone?: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone: phone || '',
+          },
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      // Profile will be created automatically via trigger
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'An unexpected error occurred' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      setLoading(true);
+      await supabase.auth.signOut();
+      setUser(null);
+      setSupabaseUser(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateProfile = async (updates: Partial<Profile>) => {
+    if (!user) return { success: false, error: 'No user logged in' };
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      setUser(data);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Failed to update profile' };
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (!supabaseUser) return;
     
-    setUser(newUser);
-    storage.setItem(STORAGE_KEYS.USER_PROFILE, newUser);
-    setLoading(false);
-    return true;
-  };
-
-  const logout = () => {
-    setUser(null);
-    storage.removeItem(STORAGE_KEYS.USER_PROFILE);
-  };
-
-  const updateProfile = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      storage.setItem(STORAGE_KEYS.USER_PROFILE, updatedUser);
+    const profile = await fetchProfile(supabaseUser.id);
+    if (profile) {
+      setUser(profile);
     }
   };
 
   return {
     user,
+    supabaseUser,
     isAuthenticated: !!user,
-    login,
-    register,
-    logout,
+    loading,
+    signIn,
+    signUp,
+    signOut,
     updateProfile,
-    loading
+    refreshProfile,
   };
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const auth = useAuthProvider();
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 }
