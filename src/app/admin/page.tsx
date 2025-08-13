@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
+import { useAuth } from "@/hooks/useAuth";
 import { Product, Analytics } from "@/types";
 import {
   Shield,
@@ -59,6 +60,7 @@ export default function AdminDashboard() {
 
 function AdminContent() {
   const { products, loading, addProduct, updateProduct, deleteProduct } = useProducts();
+  const { user, logout } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -220,7 +222,7 @@ function AdminContent() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsAuthenticated(false)}
+                onClick={logout}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />

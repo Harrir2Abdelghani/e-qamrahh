@@ -16,7 +16,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
-  const { login, register, loading } = useAuthProvider();
+  const { login, register, loading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({

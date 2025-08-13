@@ -9,7 +9,7 @@ import { ProductModal } from "@/components/ProductModal";
 import { SearchFilters } from "@/components/SearchFilters";
 import { AuthModal } from "@/components/AuthModal";
 import { useProducts } from "@/hooks/useProducts";
-import { useAuthProvider } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { Product, FilterOptions } from "@/types";
 import { StorageManager, STORAGE_KEYS } from "@/lib/storage";
 import {
@@ -67,7 +67,7 @@ export default function QamrahLandingPage() {
 
 function QamrahContent() {
   const { products, loading, incrementViews, addToFavorites, removeFromFavorites, getFavorites, addRecentView, getAnalytics } = useProducts();
-  const { user, isAuthenticated, logout } = useAuthProvider();
+  const { user, isAuthenticated, logout } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Partial<FilterOptions>>({});
