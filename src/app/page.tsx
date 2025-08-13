@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useMemo } from "react";
+import { Suspense, useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,6 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductModal } from "@/components/ProductModal";
 import { SearchFilters } from "@/components/SearchFilters";
 import { AuthModal } from "@/components/AuthModal";
-import { useProducts } from "@/hooks/useProducts";
 import { useAuth } from "@/hooks/useAuth";
 import { Product, FilterOptions } from "@/types";
 import { StorageManager, STORAGE_KEYS } from "@/lib/storage";
@@ -66,8 +65,7 @@ export default function QamrahLandingPage() {
 }
 
 function QamrahContent() {
-  const { products, loading, incrementViews, addToFavorites, removeFromFavorites, getFavorites, addRecentView, getAnalytics } = useProducts();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, signOut, loading: authLoading } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Partial<FilterOptions>>({});
@@ -75,10 +73,76 @@ function QamrahContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const storage = StorageManager.getInstance();
-  const favorites = getFavorites();
-  const analytics = getAnalytics();
+  const favorites: string[] = [];
+
+  // Mock analytics for now
+  const analytics = {
+    activeProducts: products.filter(p => p.status === 'active').length,
+    totalUsers: 1250,
+    totalBookings: 89,
+    averageRating: 4.8
+  };
+
+  // Load initial data
+  useEffect(() => {
+    const loadData = async () => {
+      // For now, use some sample data until Supabase is connected
+      const sampleProducts: Product[] = [
+        {
+          id: '1',
+          name: 'Professional Camera Kit',
+          description: 'Complete photography setup with DSLR camera, lenses, and accessories.',
+          category: 'Electronics',
+          price: 75,
+          deposit: 200,
+          status: 'active',
+          owner_id: 'owner1',
+          location: 'San Francisco, CA',
+          rating: 4.9,
+          images: ['📷'],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          views: 234,
+          bookings: 12,
+          tags: ['photography', 'professional', 'camera'],
+          availability: {
+            startDate: '2024-01-01',
+            endDate: '2024-12-31',
+            unavailableDates: []
+          },
+          featured: true,
+          condition: 'excellent',
+          min_rental_days: 1,
+          max_rental_days: 7,
+          delivery_options: {
+            pickup: true,
+            delivery: true,
+            deliveryFee: 15,
+            deliveryRadius: 25
+          },
+          specifications: {
+            'Camera': 'Canon EOS R5',
+            'Lenses': '24-70mm, 70-200mm',
+            'Accessories': 'Tripod, Flash, Memory Cards'
+          },
+          policies: {
+            cancellation: 'Free cancellation up to 24 hours before rental',
+            damage: 'Renter responsible for damages beyond normal wear',
+            lateFee: 50
+          }
+        }
+      ];
+      
+      setProducts(sampleProducts);
+      setLoading(false);
+    };
+
+    loadData();
+  }, []);
 
   const filteredProducts = useMemo(() => {
     let filtered = products.filter((product) => {
@@ -152,8 +216,6 @@ function QamrahContent() {
   }, [products, searchQuery, filters]);
 
   const handleProductView = (product: Product) => {
-    incrementViews(product.id);
-    addRecentView(product.id);
     setSelectedProduct(product);
   };
 
@@ -162,12 +224,7 @@ function QamrahContent() {
       setShowAuthModal(true);
       return;
     }
-
-    if (favorites.includes(productId)) {
-      removeFromFavorites(productId);
-    } else {
-      addToFavorites(productId);
-    }
+    // Handle favorites logic here
   };
 
   const clearFilters = () => {
@@ -178,31 +235,31 @@ function QamrahContent() {
   const stats = [
     { 
       label: "Active Products", 
-      value: analytics.activeProducts.toString(), 
+      value: analytics.activeProducts, 
       icon: Globe,
       color: "from-blue-500 to-blue-600"
     },
     { 
       label: "Happy Users", 
-      value: analytics.totalUsers.toLocaleString(), 
+      value: analytics.totalUsers, 
       icon: Users,
       color: "from-emerald-500 to-emerald-600"
     },
     { 
       label: "Total Bookings", 
-      value: analytics.totalBookings.toString(), 
+      value: analytics.totalBookings, 
       icon: TrendingUp,
       color: "from-purple-500 to-purple-600"
     },
     { 
       label: "Average Rating", 
-      value: analytics.averageRating.toFixed(1), 
+      value: analytics.averageRating, 
       icon: Award,
       color: "from-amber-500 to-amber-600"
     },
   ];
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -259,7 +316,7 @@ function QamrahContent() {
                   </Button>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-medium">{user?.name}</span>
-                    <Button variant="ghost" size="sm" onClick={logout}>
+                    <Button variant="ghost" size="sm" onClick={signOut}>
                       <LogOut className="w-4 h-4" />
                     </Button>
                   </div>
@@ -323,7 +380,7 @@ function QamrahContent() {
       <section className="container mx-auto px-6 py-20">
         <div className="text-center max-w-5xl mx-auto">
           <Badge className="mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0 px-6 py-3 text-sm font-medium shadow-lg">
-            ⚡ Trusted by {analytics.totalUsers.toLocaleString()}+ global renters
+            ⚡ Trusted by {analytics.totalUsers}+ global renters
           </Badge>
 
           <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
@@ -363,7 +420,7 @@ function QamrahContent() {
                 <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg`}>
                   <stat.icon className="w-6 h-6 text-white" />
                 </div>
-                <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                <div className="text-2xl font-bold text-gray-900">{stat.value.toString()}</div>
                 <div className="text-sm text-gray-600">{stat.label}</div>
               </div>
             ))}

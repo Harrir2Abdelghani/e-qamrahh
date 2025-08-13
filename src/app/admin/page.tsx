@@ -15,7 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/ProductCard";
-import { useProducts } from "@/hooks/useProducts";
 import { useAuth } from "@/hooks/useAuth";
 import { Product, Analytics } from "@/types";
 import {
@@ -59,9 +58,10 @@ export default function AdminDashboard() {
 }
 
 function AdminContent() {
-  const { products, loading, addProduct, updateProduct, deleteProduct } = useProducts();
-  const { user, logout } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -69,6 +69,15 @@ function AdminContent() {
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Load products data
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Load sample data for now
+      setProducts([]);
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
 
   const analytics: Analytics = useMemo(() => ({
     totalProducts: products.length,
@@ -110,23 +119,23 @@ function AdminContent() {
     }
   };
 
-  const handleAddProduct = (productData: Omit<Product, "id" | "createdAt" | "updatedAt" | "views" | "bookings">) => {
-    addProduct(productData);
+  const handleAddProduct = (productData: any) => {
+    // Add product logic here
     setShowAddProduct(false);
   };
 
-  const handleUpdateProduct = (productData: Product) => {
-    updateProduct(productData.id, productData);
+  const handleUpdateProduct = (productData: any) => {
+    // Update product logic here
     setEditingProduct(null);
   };
 
   const handleDeleteProduct = (productId: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      deleteProduct(productId);
+      // Delete product logic here
     }
   };
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <Card className="w-full max-w-md shadow-2xl border-0">
@@ -222,7 +231,7 @@ function AdminContent() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={logout}
+                onClick={() => setIsAuthenticated(false)}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />
