@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { Database } from "@/types/database";
@@ -222,7 +222,11 @@ export function useAuthProvider() {
   };
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
   const auth = useAuthProvider();
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 }
