@@ -58,8 +58,8 @@ export default function AdminDashboard() {
 }
 
 function AdminContent() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isAuthenticated, signOut, loading: authLoading } = useAuth();
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
@@ -72,12 +72,12 @@ function AdminContent() {
 
   // Load products data
   useEffect(() => {
-    if (isAuthenticated) {
+    if (adminAuthenticated || (isAuthenticated && user?.role === 'admin')) {
       // Load sample data for now
       setProducts([]);
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [adminAuthenticated, isAuthenticated, user]);
 
   const analytics: Analytics = useMemo(() => ({
     totalProducts: products.length,
@@ -113,7 +113,7 @@ function AdminContent() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (username === "admin" && password === "admin") {
-      setIsAuthenticated(true);
+      setAdminAuthenticated(true);
     } else {
       alert("Invalid credentials. Use admin/admin");
     }
@@ -135,7 +135,8 @@ function AdminContent() {
     }
   };
 
-  if (!isAuthenticated && !authLoading) {
+  // Show admin login if not authenticated as admin
+  if (!adminAuthenticated && (!isAuthenticated || user?.role !== 'admin') && !authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <Card className="w-full max-w-md shadow-2xl border-0">
@@ -231,7 +232,10 @@ function AdminContent() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsAuthenticated(false)}
+                onClick={() => {
+                  setAdminAuthenticated(false);
+                  signOut();
+                }}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />

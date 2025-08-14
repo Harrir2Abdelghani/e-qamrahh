@@ -13,20 +13,20 @@ interface AuthUser {
   verified: boolean;
 }
 
+interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+}
+
 interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (data: RegisterData) => Promise<boolean>;
-  logout: () => Promise<void>;
-}
-
-interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-  phone?: string;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,7 +39,11 @@ export function useAuth() {
   return context;
 }
 
-export function useAuthProvider(): AuthContextType {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -160,7 +164,7 @@ export function useAuthProvider(): AuthContextType {
     }
   };
 
-  const logout = async (): Promise<void> => {
+  const signOut = async (): Promise<void> => {
     try {
       setLoading(true);
       await supabase.auth.signOut();
@@ -172,21 +176,14 @@ export function useAuthProvider(): AuthContextType {
     }
   };
 
-  return {
+  const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     loading,
     login,
     register,
-    logout,
+    signOut,
   };
-}
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
-  const auth = useAuthProvider();
-  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
