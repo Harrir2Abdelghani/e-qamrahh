@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { createBrowserClient } from "@/lib/supabase";
 import { Database } from "@/types/database";
 import { useAuth } from "./useAuth";
 
@@ -17,6 +17,7 @@ export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [supabase] = useState(() => createBrowserClient());
   const { user } = useAuth();
 
   // Fetch products with owner information
