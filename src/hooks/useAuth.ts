@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { User as SupabaseUser } from "@supabase/supabase-js";
 import { createBrowserClient } from "@/lib/supabase";
 
 interface AuthUser {
@@ -46,86 +45,25 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [supabase] = useState(() => createBrowserClient());
 
   useEffect(() => {
-    // Check for existing session
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await loadUserProfile(session.user);
-        }
-      } catch (error) {
-        console.error('Session check error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          await loadUserProfile(session.user);
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    // Simple mock authentication for now
+    setLoading(false);
   }, []);
-
-  const loadUserProfile = async (supabaseUser: SupabaseUser) => {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', supabaseUser.id)
-        .single();
-
-      if (profile) {
-        setUser({
-          id: profile.id,
-          email: profile.email,
-          name: profile.full_name || 'User',
-          role: profile.role || 'user',
-          avatar: profile.avatar_url,
-          verified: profile.verified || false
-        });
-      }
-    } catch (error) {
-      console.error('Profile loading error:', error);
-      // Fallback user data
-      setUser({
-        id: supabaseUser.id,
-        email: supabaseUser.email || '',
-        name: supabaseUser.user_metadata?.full_name || 'User',
-        role: 'user',
-        verified: false
-      });
-    }
-  };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error('Login error:', error);
-        return false;
-      }
-
-      if (data.user) {
-        await loadUserProfile(data.user);
+      // Mock login - replace with real Supabase auth when connected
+      if (email && password) {
+        const mockUser: AuthUser = {
+          id: '1',
+          email,
+          name: 'Test User',
+          role: 'user',
+          verified: true
+        };
+        setUser(mockUser);
         return true;
       }
       return false;
@@ -140,23 +78,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (data: RegisterData): Promise<boolean> => {
     try {
       setLoading(true);
-      const { data: authData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            full_name: data.name,
-            phone: data.phone || '',
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Registration error:', error);
-        return false;
+      // Mock registration - replace with real Supabase auth when connected
+      if (data.email && data.password && data.name) {
+        const mockUser: AuthUser = {
+          id: '1',
+          email: data.email,
+          name: data.name,
+          role: 'user',
+          verified: false
+        };
+        setUser(mockUser);
+        return true;
       }
-
-      return !!authData.user;
+      return false;
     } catch (error) {
       console.error('Registration error:', error);
       return false;
@@ -168,7 +102,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async (): Promise<void> => {
     try {
       setLoading(true);
-      await supabase.auth.signOut();
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
