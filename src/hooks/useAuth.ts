@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { User } from "@supabase/supabase-js";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 import { createBrowserClient } from "@/lib/supabase";
 
 interface AuthUser {
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadUserProfile = async (supabaseUser: User) => {
+  const loadUserProfile = async (supabaseUser: SupabaseUser) => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
