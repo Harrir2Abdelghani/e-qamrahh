@@ -231,7 +231,7 @@ export function ProductCard({
         {/* Features */}
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center space-x-3">
-            {product.deliveryOptions.delivery && (
+            {product.deliveryOptions?.delivery && (
               <div className="flex items-center space-x-1">
                 <Truck className="w-3 h-3" />
                 <span>Delivery</span>
