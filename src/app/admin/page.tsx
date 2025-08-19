@@ -347,12 +347,75 @@ export default function AdminDashboard() {
   };
 
   if (!isAuthenticated || user?.role !== 'admin') {
+    const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+    const [loginError, setLoginError] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+    const handleAdminLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoggingIn(true);
+      setLoginError('');
+      
+      const success = await login(loginForm.email, loginForm.password);
+      if (!success) {
+        setLoginError('Invalid admin credentials');
+      }
+      setIsLoggingIn(false);
+    };
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="p-8 text-center">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600">You need admin privileges to access this page.</p>
+        <Card className="p-8 w-full max-w-md">
+          <div className="text-center mb-6">
+            <Shield className="w-16 h-16 text-indigo-600 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Login</h1>
+            <p className="text-gray-600">Enter your admin credentials to access the dashboard</p>
+          </div>
+          
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={loginForm.email}
+                onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                placeholder="admin@qamrah.com"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                placeholder="Enter admin password"
+                required
+              />
+            </div>
+            {loginError && (
+              <div className="text-red-600 text-sm">{loginError}</div>
+            )}
+            <Button 
+              type="submit" 
+              className="w-full bg-indigo-600 hover:bg-indigo-700"
+              disabled={isLoggingIn}
+            >
+              {isLoggingIn ? 'Logging in...' : 'Login to Admin Dashboard'}
+            </Button>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/'}
+              className="text-sm"
+            >
+              Back to Main Site
+            </Button>
+          </div>
         </Card>
       </div>
     );

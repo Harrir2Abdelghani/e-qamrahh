@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Suspense, useState, useMemo, useEffect } from "react";
@@ -103,7 +102,7 @@ function QamrahContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Partial<FilterOptions>>({});
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -432,7 +431,7 @@ function QamrahContent() {
           }
         }
       ];
-      
+
       setProducts(sampleProducts);
       setLoading(false);
     };
@@ -452,7 +451,7 @@ function QamrahContent() {
           product.location.toLowerCase().includes(query) ||
           product.owner.toLowerCase().includes(query) ||
           (product.tags || []).some(tag => tag.toLowerCase().includes(query));
-        
+
         if (!matchesSearch) return false;
       }
 
@@ -676,7 +675,7 @@ function QamrahContent() {
         {/* Animated Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%239C92AC%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%224%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
-          
+
           {/* Floating elements */}
           <div className="absolute top-20 left-10 w-20 h-20 bg-purple-500/20 rounded-full animate-pulse"></div>
           <div className="absolute top-40 right-20 w-16 h-16 bg-indigo-500/20 rounded-full animate-bounce"></div>
@@ -805,7 +804,7 @@ function QamrahContent() {
                     <span className="text-sm font-medium mr-1">Browse</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
-                  
+
                   {/* Decorative background */}
                   <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${category.color} opacity-10 rounded-full transform translate-x-8 -translate-y-8`}></div>
                 </CardContent>
@@ -819,7 +818,7 @@ function QamrahContent() {
       <section id="features" className="py-20 bg-white relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-purple-50 opacity-50"></div>
-        
+
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
             <Badge className="mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0 px-6 py-3 text-sm font-medium">
@@ -868,7 +867,7 @@ function QamrahContent() {
                   <p className="text-gray-600 leading-relaxed mb-6">
                     {feature.description}
                   </p>
-                  
+
                   {/* Feature list */}
                   <div className="space-y-2">
                     {feature.features.map((item, i) => (
@@ -878,7 +877,7 @@ function QamrahContent() {
                       </div>
                     ))}
                   </div>
-                  
+
                   {/* Decorative elements */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 opacity-20 rounded-full transform translate-x-16 -translate-y-16"></div>
                 </CardHeader>
@@ -1005,7 +1004,7 @@ function QamrahContent() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm text-gray-500">
                 <SortAsc className="w-4 h-4" />
@@ -1025,7 +1024,7 @@ function QamrahContent() {
                 <option value="price-desc">Price: High to Low</option>
                 <option value="rating-desc">Highest Rated</option>
               </select>
-              
+
               {Object.keys(filters).length > 0 && (
                 <Button
                   variant="ghost"
@@ -1204,7 +1203,7 @@ function QamrahContent() {
             <Badge className="mb-8 bg-white/20 text-white border-0 px-6 py-3 text-sm font-medium backdrop-blur-sm">
               🎉 Join the Revolution
             </Badge>
-            
+
             <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white leading-tight">
               Ready to Transform
               <br />
@@ -1212,7 +1211,7 @@ function QamrahContent() {
                 Your Lifestyle?
               </span>
             </h2>
-            
+
             <p className="text-xl md:text-2xl mb-12 text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Join thousands of smart consumers who've discovered the future of ownership. 
               Rent premium items, save money, and live sustainably.
@@ -1378,7 +1377,7 @@ function QamrahContent() {
         onAuthRequired={() => {}}
       />
 
-      
+
     </div>
   );
 }

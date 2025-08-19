@@ -1,22 +1,12 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { createBrowserClient } from "@/lib/supabase";
 
 interface AuthUser {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user' | 'owner';
-  avatar?: string;
-  verified: boolean;
-}
-
-interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-  phone?: string;
+  role: 'admin';
 }
 
 interface AuthContextType {
@@ -24,7 +14,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (data: RegisterData) => Promise<boolean>;
   signOut: () => Promise<void>;
 }
 
@@ -47,26 +36,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simple mock authentication for now
+    // Check if admin is already logged in from localStorage
+    const savedAdmin = localStorage.getItem('qamrah_admin');
+    if (savedAdmin) {
+      setUser(JSON.parse(savedAdmin));
+    }
     setLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      // Mock login - replace with real Supabase auth when connected
-      if (email && password) {
-        // Special admin credentials for testing
-        const isAdmin = email === 'admin@qamrah.com' && password === 'admin123';
-        
-        const mockUser: AuthUser = {
-          id: isAdmin ? 'admin1' : '1',
+      // Admin credentials check
+      if (email === 'admin@qamrah.com' && password === 'admin123') {
+        const adminUser: AuthUser = {
+          id: 'admin1',
           email,
-          name: isAdmin ? 'Admin User' : 'Test User',
-          role: isAdmin ? 'admin' : 'user',
-          verified: true
+          name: 'Admin User',
+          role: 'admin'
         };
-        setUser(mockUser);
+        setUser(adminUser);
+        localStorage.setItem('qamrah_admin', JSON.stringify(adminUser));
         return true;
       }
       return false;
@@ -78,34 +68,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const register = async (data: RegisterData): Promise<boolean> => {
-    try {
-      setLoading(true);
-      // Mock registration - replace with real Supabase auth when connected
-      if (data.email && data.password && data.name) {
-        const mockUser: AuthUser = {
-          id: '1',
-          email: data.email,
-          name: data.name,
-          role: 'user',
-          verified: false
-        };
-        setUser(mockUser);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Registration error:', error);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const signOut = async (): Promise<void> => {
     try {
       setLoading(true);
       setUser(null);
+      localStorage.removeItem('qamrah_admin');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -118,7 +85,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated: !!user,
     loading,
     login,
-    register,
     signOut,
   };
 
