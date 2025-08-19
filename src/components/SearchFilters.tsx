@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { FilterOptions } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,7 +73,7 @@ export function SearchFilters({ onSearch, onFilter, onClearFilters }: SearchFilt
           <Filter className="w-4 h-4" />
           <span>Filters</span>
         </Button>
-        
+
         {Object.keys(filters).length > 0 && (
           <Button
             variant="ghost"
@@ -178,6 +177,7 @@ export function SearchFilters({ onSearch, onFilter, onClearFilters }: SearchFilt
     </div>
   );
 }
+
 "use client";
 
 import { useState } from "react";
