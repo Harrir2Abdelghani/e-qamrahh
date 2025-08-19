@@ -1,27 +1,149 @@
 
 "use client";
 
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { createBrowserClient } from "@/lib/supabase";
-import { Database } from "@/types/database";
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
-
-interface AuthUser extends Profile {
-  // Additional computed properties
-}
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { dataService } from '@/lib/dataService';
+import { StorageManager, STORAGE_KEYS } from '@/lib/storage';
+import { User } from '@/types';
 
 interface AuthContextType {
-  user: AuthUser | null;
+  user: User | null;
   isAuthenticated: boolean;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: string }>;
-  signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<Profile>) => Promise<{ success: boolean; error?: string }>;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (userData: {
+    email: string;
+    password: string;
+    full_name: string;
+    phone?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  logout: () => void;
+  updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const storage = StorageManager.getInstance();
+
+  useEffect(() => {
+    // Initialize sample data
+    dataService.initializeSampleData();
+    
+    // Check for existing session
+    const savedUser = storage.getItem<User | null>(STORAGE_KEYS.CURRENT_USER, null);
+    if (savedUser) {
+      setUser(savedUser);
+    }
+    setIsLoading(false);
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Simple authentication - in real app, you'd verify password
+      const foundUser = dataService.getUserByEmail(email);
+      
+      if (!foundUser) {
+        return { success: false, error: 'User not found' };
+      }
+
+      // For demo purposes, accept any password for existing users
+      // Admin credentials: admin@qamrah.com / admin
+      // User credentials: user@example.com / user
+      if ((email === 'admin@qamrah.com' && password === 'admin') ||
+          (email === 'user@example.com' && password === 'user') ||
+          password === 'demo') {
+        
+        setUser(foundUser);
+        storage.setItem(STORAGE_KEYS.CURRENT_USER, foundUser);
+        return { success: true };
+      }
+      
+      return { success: false, error: 'Invalid credentials' };
+    } catch (error) {
+      return { success: false, error: 'Login failed' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (userData: {
+    email: string;
+    password: string;
+    full_name: string;
+    phone?: string;
+  }) => {
+    try {
+      setIsLoading(true);
+      
+      // Check if user already exists
+      const existingUser = dataService.getUserByEmail(userData.email);
+      if (existingUser) {
+        return { success: false, error: 'User already exists' };
+      }
+
+      // Create new user
+      const newUser = dataService.createUser({
+        email: userData.email,
+        full_name: userData.full_name,
+        phone: userData.phone,
+        role: 'user',
+        rating: 0,
+        verified: false
+      });
+
+      setUser(newUser);
+      storage.setItem(STORAGE_KEYS.CURRENT_USER, newUser);
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Registration failed' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    storage.removeItem(STORAGE_KEYS.CURRENT_USER);
+  };
+
+  const updateProfile = async (updates: Partial<User>) => {
+    try {
+      if (!user) return { success: false, error: 'Not authenticated' };
+      
+      const updatedUser = dataService.updateUser(user.id, updates);
+      if (!updatedUser) {
+        return { success: false, error: 'Failed to update profile' };
+      }
+      
+      setUser(updatedUser);
+      storage.setItem(STORAGE_KEYS.CURRENT_USER, updatedUser);
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Profile update failed' };
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated: !!user,
+      isLoading,
+      login,
+      register,
+      logout,
+      updateProfile
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
 
 export function useAuth() {
   const context = useContext(AuthContext);
@@ -29,234 +151,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [supabase] = useState(() => createBrowserClient());
-
-  useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          setLoading(false);
-          return;
-        }
-
-        if (session?.user) {
-          await loadUserProfile(session.user.id);
-        }
-      } catch (error) {
-        console.error('Error in getInitialSession:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getInitialSession();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        
-        if (event === 'SIGNED_IN' && session?.user) {
-          await loadUserProfile(session.user.id);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
-        
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const loadUserProfile = async (userId: string) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // Profile doesn't exist, this might be a new user
-          console.log('Profile not found for user:', userId);
-        } else {
-          console.error('Error loading profile:', error);
-        }
-        return;
-      }
-
-      if (profile) {
-        setUser(profile as AuthUser);
-      }
-    } catch (error) {
-      console.error('Error in loadUserProfile:', error);
-    }
-  };
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error('Login error:', error);
-        return false;
-      }
-
-      if (data.user) {
-        await loadUserProfile(data.user.id);
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signup = async (email: string, password: string, fullName: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      setLoading(true);
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          }
-        }
-      });
-
-      if (error) {
-        console.error('Signup error:', error);
-        return { success: false, error: error.message };
-      }
-
-      if (data.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email!,
-            full_name: fullName,
-            role: 'user',
-            verified: false,
-            total_rentals: 0,
-            total_earnings: 0,
-            rating: 5.0
-          });
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          return { success: false, error: 'Failed to create user profile' };
-        }
-
-        // Load the newly created profile
-        await loadUserProfile(data.user.id);
-        return { success: true };
-      }
-
-      return { success: false, error: 'Unknown error occurred' };
-    } catch (error) {
-      console.error('Signup error:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Logout error:', error);
-      }
-      
-      setUser(null);
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateProfile = async (updates: Partial<Profile>): Promise<{ success: boolean; error?: string }> => {
-    if (!user) {
-      return { success: false, error: 'No user logged in' };
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating profile:', error);
-        return { success: false, error: error.message };
-      }
-
-      if (data) {
-        setUser(data as AuthUser);
-        return { success: true };
-      }
-
-      return { success: false, error: 'No data returned' };
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error occurred' 
-      };
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user,
-    loading,
-    login,
-    signup,
-    signOut,
-    updateProfile,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
 }

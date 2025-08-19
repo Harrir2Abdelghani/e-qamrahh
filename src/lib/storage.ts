@@ -72,6 +72,9 @@ export class CookieManager {
 // Storage Keys
 export const STORAGE_KEYS = {
   PRODUCTS: 'qamrah_products',
+  USERS: 'qamrah_users',
+  ORDERS: 'qamrah_orders',
+  REVIEWS: 'qamrah_reviews',
   USER_PREFERENCES: 'qamrah_user_preferences',
   SEARCH_HISTORY: 'qamrah_search_history',
   FAVORITES: 'qamrah_favorites',
@@ -80,5 +83,6 @@ export const STORAGE_KEYS = {
   ADMIN_SETTINGS: 'qamrah_admin_settings',
   ANALYTICS: 'qamrah_analytics',
   NOTIFICATIONS: 'qamrah_notifications',
-  RECENT_VIEWS: 'qamrah_recent_views'
+  RECENT_VIEWS: 'qamrah_recent_views',
+  CURRENT_USER: 'qamrah_current_user'
 } as const;

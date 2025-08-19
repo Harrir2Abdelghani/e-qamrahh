@@ -1,183 +1,132 @@
+
 export interface Product {
   id: string;
   name: string;
+  description: string;
   category: string;
   price: number;
-  status: "active" | "inactive" | "pending" | "rented";
-  owner: string;
-  ownerId: string;
+  deposit?: number;
   location: string;
-  rating: number;
-  image: string;
   images: string[];
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-  views: number;
-  bookings: number;
   tags: string[];
-  availability: {
-    startDate: string;
-    endDate: string;
-    unavailableDates: string[];
-  };
-  featured: boolean;
-  condition: "excellent" | "good" | "fair" | "poor";
-  deposit: number;
-  minRentalDays: number;
-  maxRentalDays: number;
-  deliveryOptions: {
+  condition: 'excellent' | 'good' | 'fair' | 'poor';
+  min_rental_days: number;
+  max_rental_days: number;
+  delivery_options: {
     pickup: boolean;
     delivery: boolean;
     deliveryFee: number;
     deliveryRadius: number;
   };
-  specifications: Record<string, string>;
+  specifications: Record<string, any>;
   policies: {
     cancellation: string;
     damage: string;
     lateFee: number;
   };
+  owner_id: string;
+  owner: {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+    rating: number;
+    verified: boolean;
+    email: string;
+    phone?: string;
+  };
+  status: 'available' | 'rented' | 'maintenance' | 'pending';
+  views: number;
+  rating: number;
+  reviews_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface User {
   id: string;
-  name: string;
   email: string;
-  phone: string;
-  avatar: string;
-  role: "admin" | "user" | "owner";
-  joinedAt: string;
-  totalRentals: number;
-  totalEarnings: number;
+  full_name: string;
+  avatar_url?: string;
+  phone?: string;
+  role: 'user' | 'admin';
   rating: number;
   verified: boolean;
-  address: {
+  created_at: string;
+  favorites: string[];
+  address?: {
     street: string;
     city: string;
     state: string;
-    zipCode: string;
-    country: string;
-  };
-  preferences: {
-    notifications: boolean;
-    emailUpdates: boolean;
-    currency: string;
-    language: string;
-  };
-  documents: {
-    idVerified: boolean;
-    phoneVerified: boolean;
-    emailVerified: boolean;
+    zip: string;
   };
 }
 
-export interface Booking {
+export interface Order {
   id: string;
-  productId: string;
-  renterId: string;
-  ownerId: string;
-  startDate: string;
-  endDate: string;
-  totalAmount: number;
+  product_id: string;
+  product: Product;
+  renter_id: string;
+  owner_id: string;
+  start_date: string;
+  end_date: string;
+  total_amount: number;
   deposit: number;
-  status: "pending" | "confirmed" | "active" | "completed" | "cancelled";
-  paymentStatus: "pending" | "paid" | "refunded";
-  createdAt: string;
-  updatedAt: string;
-  notes: string;
-  deliveryMethod: "pickup" | "delivery";
-  deliveryAddress?: string;
+  delivery_method: 'pickup' | 'delivery';
+  delivery_address?: string;
+  notes?: string;
+  status: 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled';
+  payment_status: 'pending' | 'paid' | 'refunded';
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Review {
   id: string;
-  productId: string;
-  bookingId: string;
-  reviewerId: string;
+  product_id: string;
+  reviewer_id: string;
+  reviewer_name: string;
   rating: number;
   comment: string;
-  createdAt: string;
-  helpful: number;
-  response?: {
-    comment: string;
-    createdAt: string;
-  };
+  created_at: string;
 }
 
 export interface Analytics {
   totalProducts: number;
-  activeProducts: number;
   totalUsers: number;
-  totalBookings: number;
+  totalOrders: number;
   totalRevenue: number;
-  monthlyRevenue: number;
-  averageRating: number;
-  topCategories: { name: string; count: number; revenue: number }[];
-  recentActivity: { 
-    id: string;
-    type: "booking" | "product" | "user" | "review";
+  topCategories: Array<{
+    name: string;
+    count: number;
+    revenue: number;
+  }>;
+  recentActivity: Array<{
+    type: 'order' | 'product' | 'user';
     message: string;
     timestamp: string;
-    userId?: string;
-    productId?: string;
-  }[];
-  monthlyStats: {
+  }>;
+  monthlyStats: Array<{
     month: string;
-    bookings: number;
+    orders: number;
     revenue: number;
-    newUsers: number;
-  }[];
-  popularProducts: Product[];
-  userGrowth: number;
-  bookingGrowth: number;
-  revenueGrowth: number;
+  }>;
 }
 
 export interface FilterOptions {
-  category: string;
-  priceRange: [number, number];
-  location: string;
-  rating: number;
-  availability: string;
-  condition: string;
-  deliveryOptions: string[];
-  sortBy: "price" | "rating" | "newest" | "popular";
-  sortOrder: "asc" | "desc";
-}
-
-export interface UserPreferences {
-  theme: "light" | "dark" | "system";
-  currency: string;
-  language: string;
-  notifications: {
-    email: boolean;
-    push: boolean;
-    sms: boolean;
-  };
-  searchHistory: string[];
-  recentViews: string[];
-  favorites: string[];
-}
-
-export interface CartItem {
-  productId: string;
-  startDate: string;
-  endDate: string;
-  totalDays: number;
-  dailyRate: number;
-  totalAmount: number;
-  deliveryMethod: "pickup" | "delivery";
-  addedAt: string;
+  category?: string;
+  priceRange?: [number, number];
+  location?: string;
+  condition?: string;
+  sortBy?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'rating' | 'views';
+  searchQuery?: string;
 }
 
 export interface Notification {
   id: string;
-  userId: string;
-  type: "booking" | "payment" | "review" | "system";
+  user_id: string;
   title: string;
   message: string;
+  type: 'order' | 'review' | 'system' | 'promotion';
   read: boolean;
-  createdAt: string;
-  actionUrl?: string;
+  created_at: string;
 }

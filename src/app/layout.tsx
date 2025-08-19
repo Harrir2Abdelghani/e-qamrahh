@@ -1,24 +1,34 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/hooks/useAuth";
 import { Suspense } from "react";
+import { AuthProvider } from "@/hooks/useAuth";
 
-const inter = Inter({ subsets: ["latin"] });
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "Qamrah - Premium Luxury Rentals",
-  description: "Discover exclusive designer dresses, luxury jewelry, and premium accessories for your special moments. Rent, wear, return.",
+  title: "Qamrah - Rent Anything, Anywhere",
+  description: "The trusted marketplace for renting anything you need, anywhere you are. Professional equipment, tools, fashion, and more.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <AuthProvider>
           <Suspense fallback={
             <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">

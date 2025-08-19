@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useProducts } from "@/hooks/useProducts";
+import { dataService } from "@/lib/dataService";
+import { Product, Analytics, User, Order } from "@/types";
 import { 
   Users, 
   Package, 
@@ -36,347 +39,368 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
-  RefreshCw
+  Home
 } from "lucide-react";
+
+interface NewProductData {
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  deposit: number;
+  location: string;
+  condition: 'excellent' | 'good' | 'fair' | 'poor';
+  min_rental_days: number;
+  max_rental_days: number;
+}
 
 export default function AdminDashboard() {
   const { user, isAuthenticated, login } = useAuth();
-  const { 
-    products, 
-    loading, 
-    addProduct, 
-    updateProduct, 
-    deleteProduct, 
-    getAnalytics,
-    refreshProducts 
-  } = useProducts();
-
-  const [analytics, setAnalytics] = useState<any>(null);
+  const { products, addProduct, updateProduct, deleteProduct, getAnalytics } = useProducts();
+  
+  const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [loginError, setLoginError] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [newProduct, setNewProduct] = useState({
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+
+  const [newProduct, setNewProduct] = useState<NewProductData>({
     name: '',
     description: '',
-    category: 'Dresses',
+    category: 'Electronics',
     price: 0,
     deposit: 0,
     location: '',
-    condition: 'excellent' as const,
+    condition: 'good',
     min_rental_days: 1,
-    max_rental_days: 7,
-    images: ['📦'],
-    tags: [] as string[],
-    specifications: {},
-    policies: {
-      cancellation: 'Free cancellation up to 24 hours',
-      damage: 'Standard damage policy',
-      lateFee: 25
-    },
-    delivery_options: {
-      pickup: true,
-      delivery: true,
-      deliveryFee: 15,
-      deliveryRadius: 25
-    }
+    max_rental_days: 30
   });
 
+  // Handle mounting
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Load data on component mount
   useEffect(() => {
     if (!mounted) return;
-
-    if (isAuthenticated && user?.role === 'admin') {
-      loadAnalytics();
+    
+    if (!isAuthenticated || user?.role !== 'admin') {
+      return;
     }
-  }, [isAuthenticated, user, mounted, products]);
+    setLoading(true);
+    loadData();
+  }, [isAuthenticated, user, mounted]);
 
-  const loadAnalytics = async () => {
+  const loadData = () => {
     try {
-      const analyticsData = await getAnalytics();
+      const analyticsData = getAnalytics();
+      const allUsers = dataService.getUsers();
+      const allOrders = dataService.getOrders();
+      
       setAnalytics(analyticsData);
+      setUsers(allUsers);
+      setOrders(allOrders);
     } catch (error) {
-      console.error('Error loading analytics:', error);
+      console.error('Failed to load data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCreateProduct = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    
+    try {
+      const result = await login(loginForm.email, loginForm.password);
+      if (!result.success) {
+        alert(result.error || 'Login failed');
+      }
+    } catch (error) {
+      alert('Login failed');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleAddProduct = async () => {
     try {
       const result = await addProduct({
         ...newProduct,
-        tags: newProduct.tags.length > 0 ? newProduct.tags : ['new'],
+        images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500'],
+        tags: [newProduct.category.toLowerCase()],
+        delivery_options: {
+          pickup: true,
+          delivery: false,
+          deliveryFee: 0,
+          deliveryRadius: 0
+        },
+        specifications: {},
+        policies: {
+          cancellation: "Standard cancellation policy",
+          damage: "Renter responsible for damages",
+          lateFee: 25
+        }
       });
 
       if (result.success) {
+        setIsAddModalOpen(false);
         setNewProduct({
           name: '',
           description: '',
-          category: 'Dresses',
+          category: 'Electronics',
           price: 0,
           deposit: 0,
           location: '',
-          condition: 'excellent',
+          condition: 'good',
           min_rental_days: 1,
-          max_rental_days: 7,
-          images: ['📦'],
-          tags: [],
-          specifications: {},
-          policies: {
-            cancellation: 'Free cancellation up to 24 hours',
-            damage: 'Standard damage policy',
-            lateFee: 25
-          },
-          delivery_options: {
-            pickup: true,
-            delivery: true,
-            deliveryFee: 15,
-            deliveryRadius: 25
-          }
+          max_rental_days: 30
         });
-        setIsCreateModalOpen(false);
-        await refreshProducts();
-        await loadAnalytics();
-      } else {
-        alert(result.error || 'Failed to create product');
+        loadData(); // Refresh analytics
       }
     } catch (error) {
-      console.error('Error creating product:', error);
-      alert('Failed to create product');
+      console.error('Failed to add product:', error);
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-
-    try {
-      const result = await deleteProduct(id);
-      if (result.success) {
-        await refreshProducts();
-        await loadAnalytics();
-      } else {
-        alert(result.error || 'Failed to delete product');
+  const handleDeleteProduct = async (productId: string) => {
+    if (confirm('Are you sure you want to delete this product?')) {
+      try {
+        await deleteProduct(productId);
+        loadData(); // Refresh analytics
+      } catch (error) {
+        console.error('Failed to delete product:', error);
       }
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      alert('Failed to delete product');
-    }
-  };
-
-  const handleStatusChange = async (id: string, status: string) => {
-    try {
-      const result = await updateProduct(id, { status });
-      if (result.success) {
-        await refreshProducts();
-        await loadAnalytics();
-      } else {
-        alert(result.error || 'Failed to update product status');
-      }
-    } catch (error) {
-      console.error('Error updating product status:', error);
-      alert('Failed to update product status');
     }
   };
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (product.owner?.full_name || '').toLowerCase().includes(searchQuery.toLowerCase())
+    product.owner.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoggingIn(true);
-    setLoginError('');
-
-    const success = await login(loginForm.email, loginForm.password);
-    if (!success) {
-      setLoginError('Invalid admin credentials');
-    }
-    setIsLoggingIn(false);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-emerald-500';
-      case 'pending': return 'bg-amber-500';
-      case 'inactive': return 'bg-red-500';
-      case 'rented': return 'bg-blue-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
+  // Prevent hydration mismatch
   if (!mounted) {
     return null;
   }
 
   if (!isAuthenticated || user?.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="p-8 w-full max-w-md">
-          <div className="text-center mb-6">
-            <Shield className="w-16 h-16 text-indigo-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Login</h1>
-            <p className="text-gray-600">Enter your admin credentials to access the dashboard</p>
-          </div>
-
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={loginForm.email}
-                onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
-                placeholder="admin@qamrah.com"
-                required
-              />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+              <Shield className="w-6 h-6 text-indigo-600" />
             </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                placeholder="Enter admin password"
-                required
-              />
+            <CardTitle className="text-2xl font-bold text-gray-900">Admin Access</CardTitle>
+            <p className="text-gray-600">Sign in to access the admin dashboard</p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input 
+                  id="email"
+                  type="email" 
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="admin@qamrah.com"
+                  required 
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password"
+                  type="password" 
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="admin"
+                  required 
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? 'Logging in...' : 'Login to Admin Dashboard'}
+              </Button>
+            </form>
+            
+            <div className="mt-6 text-center">
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.href = '/'}
+                className="text-sm"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Back to Main Site
+              </Button>
             </div>
-            {loginError && (
-              <div className="text-red-600 text-sm">{loginError}</div>
-            )}
-            <Button 
-              type="submit" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700"
-              disabled={isLoggingIn}
-            >
-              {isLoggingIn ? 'Logging in...' : 'Login to Admin Dashboard'}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/'}
-              className="text-sm"
-            >
-              Back to Main Site
-            </Button>
-          </div>
+            
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Demo Credentials:</strong><br />
+                Email: admin@qamrah.com<br />
+                Password: admin
+              </p>
+            </div>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (loading && !analytics) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage your Qamrah marketplace</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2">
-                <Crown className="w-4 h-4 mr-2" />
-                Admin Access
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <div className="text-2xl font-bold text-indigo-600">🏛️ Qamrah Admin</div>
+              <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+                <Crown className="w-3 h-3 mr-1" />
+                Administrator
               </Badge>
-              <Button onClick={() => window.location.href = '/'} variant="outline">
-                Back to Store
-              </Button>
-              <Button onClick={refreshProducts} variant="outline" size="sm">
-                <RefreshCw className="w-4 h-4" />
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Welcome, {user.full_name}</span>
+              <Button variant="outline" size="sm" onClick={() => window.location.href = '/'}>
+                <Home className="w-4 h-4 mr-2" />
+                Main Site
               </Button>
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[
-            {
-              title: 'Total Products',
-              value: analytics?.totalProducts || products.length,
-              change: '+12.5%',
-              icon: Package,
-              color: 'from-blue-500 to-blue-600',
-              positive: true
-            },
-            {
-              title: 'Active Products',
-              value: analytics?.activeProducts || products.filter(p => p.status === 'active').length,
-              change: '+8.2%',
-              icon: CheckCircle,
-              color: 'from-emerald-500 to-emerald-600',
-              positive: true
-            },
-            {
-              title: 'Total Views',
-              value: products.reduce((sum, p) => sum + (p.views || 0), 0).toLocaleString(),
-              change: '+15.3%',
-              icon: Eye,
-              color: 'from-purple-500 to-purple-600',
-              positive: true
-            },
-            {
-              title: 'Total Bookings',
-              value: products.reduce((sum, p) => sum + (p.bookings || 0), 0).toLocaleString(),
-              change: '+23.7%',
-              icon: Calendar,
-              color: 'from-amber-500 to-amber-600',
-              positive: true
-            }
-          ].map((stat, index) => (
-            <Card key={index} className="overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                    <div className="flex items-center mt-2">
-                      <ArrowUpRight className="w-4 h-4 text-emerald-500 mr-1" />
-                      <span className="text-sm font-medium text-emerald-600">
-                        {stat.change}
-                      </span>
-                      <span className="text-sm text-gray-500 ml-1">from last month</span>
-                    </div>
-                  </div>
-                  <div className={`w-16 h-16 bg-gradient-to-br ${stat.color} rounded-2xl flex items-center justify-center shadow-lg`}>
-                    <stat.icon className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
           </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Products</p>
+                      <p className="text-3xl font-bold text-gray-900">{analytics?.totalProducts || 0}</p>
+                    </div>
+                    <Package className="w-8 h-8 text-indigo-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Users</p>
+                      <p className="text-3xl font-bold text-gray-900">{analytics?.totalUsers || 0}</p>
+                    </div>
+                    <Users className="w-8 h-8 text-green-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                      <p className="text-3xl font-bold text-gray-900">{analytics?.totalOrders || 0}</p>
+                    </div>
+                    <BarChart3 className="w-8 h-8 text-blue-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                      <p className="text-3xl font-bold text-gray-900">${analytics?.totalRevenue || 0}</p>
+                    </div>
+                    <DollarSign className="w-8 h-8 text-yellow-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Category Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {analytics?.topCategories.map((category, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="font-medium">{category.name}</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-24 h-2 bg-gray-200 rounded-full">
+                            <div 
+                              className="h-2 bg-indigo-500 rounded-full" 
+                              style={{ width: `${(category.count / (analytics?.totalProducts || 1)) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm text-gray-600">{category.count}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {analytics?.recentActivity.slice(0, 5).map((activity, index) => (
+                      <div key={index} className="flex items-center space-x-3">
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-900">{activity.message}</p>
+                          <p className="text-xs text-gray-500">{new Date(activity.timestamp).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           {/* Products Tab */}
           <TabsContent value="products">
@@ -384,61 +408,57 @@ export default function AdminDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Product Management</CardTitle>
-                  <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                  <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-indigo-600 hover:bg-indigo-700">
+                      <Button>
                         <Plus className="w-4 h-4 mr-2" />
                         Add Product
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                    <DialogContent className="max-w-2xl">
                       <DialogHeader>
-                        <DialogTitle>Create New Product</DialogTitle>
+                        <DialogTitle>Add New Product</DialogTitle>
                       </DialogHeader>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="name">Product Name</Label>
                           <Input
                             id="name"
                             value={newProduct.name}
-                            onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                            placeholder="Enter product name"
+                            onChange={(e) => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
                           />
                         </div>
                         <div>
                           <Label htmlFor="category">Category</Label>
-                          <Select
-                            value={newProduct.category}
-                            onValueChange={(value) => setNewProduct({...newProduct, category: value})}
-                          >
+                          <Select value={newProduct.category} onValueChange={(value) => setNewProduct(prev => ({ ...prev, category: value }))}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select category" />
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Dresses">Dresses</SelectItem>
-                              <SelectItem value="Jewelries">Jewelries</SelectItem>
-                              <SelectItem value="Others">Others</SelectItem>
+                              <SelectItem value="Electronics">Electronics</SelectItem>
+                              <SelectItem value="Furniture">Furniture</SelectItem>
+                              <SelectItem value="Tools">Tools</SelectItem>
+                              <SelectItem value="Sports">Sports</SelectItem>
+                              <SelectItem value="Vehicles">Vehicles</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="price">Price per Day ($)</Label>
+                          <Label htmlFor="price">Price per day</Label>
                           <Input
                             id="price"
                             type="number"
                             value={newProduct.price}
-                            onChange={(e) => setNewProduct({...newProduct, price: Number(e.target.value)})}
-                            placeholder="0"
+                            onChange={(e) => setNewProduct(prev => ({ ...prev, price: Number(e.target.value) }))}
                           />
                         </div>
                         <div>
-                          <Label htmlFor="deposit">Security Deposit ($)</Label>
+                          <Label htmlFor="deposit">Deposit</Label>
                           <Input
                             id="deposit"
                             type="number"
                             value={newProduct.deposit}
-                            onChange={(e) => setNewProduct({...newProduct, deposit: Number(e.target.value)})}
-                            placeholder="0"
+                            onChange={(e) => setNewProduct(prev => ({ ...prev, deposit: Number(e.target.value) }))}
                           />
                         </div>
                         <div>
@@ -446,16 +466,12 @@ export default function AdminDashboard() {
                           <Input
                             id="location"
                             value={newProduct.location}
-                            onChange={(e) => setNewProduct({...newProduct, location: e.target.value})}
-                            placeholder="City, State"
+                            onChange={(e) => setNewProduct(prev => ({ ...prev, location: e.target.value }))}
                           />
                         </div>
                         <div>
                           <Label htmlFor="condition">Condition</Label>
-                          <Select
-                            value={newProduct.condition}
-                            onValueChange={(value: any) => setNewProduct({...newProduct, condition: value})}
-                          >
+                          <Select value={newProduct.condition} onValueChange={(value: any) => setNewProduct(prev => ({ ...prev, condition: value }))}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -467,66 +483,26 @@ export default function AdminDashboard() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div>
-                          <Label htmlFor="minDays">Min Rental Days</Label>
-                          <Input
-                            id="minDays"
-                            type="number"
-                            value={newProduct.min_rental_days}
-                            onChange={(e) => setNewProduct({...newProduct, min_rental_days: Number(e.target.value)})}
-                            placeholder="1"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="maxDays">Max Rental Days</Label>
-                          <Input
-                            id="maxDays"
-                            type="number"
-                            value={newProduct.max_rental_days}
-                            onChange={(e) => setNewProduct({...newProduct, max_rental_days: Number(e.target.value)})}
-                            placeholder="7"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
+                        <div className="col-span-2">
                           <Label htmlFor="description">Description</Label>
                           <Textarea
                             id="description"
                             value={newProduct.description}
-                            onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                            placeholder="Enter product description"
+                            onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
                             rows={3}
                           />
                         </div>
-                        <div className="md:col-span-2">
-                          <Label htmlFor="tags">Tags (comma separated)</Label>
-                          <Input
-                            id="tags"
-                            value={newProduct.tags.join(', ')}
-                            onChange={(e) => setNewProduct({
-                              ...newProduct, 
-                              tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag)
-                            })}
-                            placeholder="luxury, designer, evening"
-                          />
-                        </div>
                       </div>
-                      <div className="flex justify-end space-x-2 mt-6">
-                        <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleCreateProduct} className="bg-indigo-600 hover:bg-indigo-700">
-                          Create Product
-                        </Button>
+                      <div className="flex justify-end space-x-2 mt-4">
+                        <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleAddProduct}>Add Product</Button>
                       </div>
                     </DialogContent>
                   </Dialog>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {/* Search */}
-                <div className="mb-6">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <div className="flex items-center space-x-4 mt-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       placeholder="Search products..."
                       value={searchQuery}
@@ -535,170 +511,137 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
-
-                {/* Products Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-4">Product</th>
-                        <th className="text-left p-4">Category</th>
-                        <th className="text-left p-4">Price</th>
-                        <th className="text-left p-4">Status</th>
-                        <th className="text-left p-4">Views</th>
-                        <th className="text-left p-4">Bookings</th>
-                        <th className="text-left p-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredProducts.map((product) => (
-                        <tr key={product.id} className="border-b hover:bg-gray-50">
-                          <td className="p-4">
-                            <div className="flex items-center space-x-3">
-                              <div className="text-2xl">{product.images?.[0] || '📦'}</div>
-                              <div>
-                                <p className="font-medium text-gray-900">{product.name}</p>
-                                <p className="text-sm text-gray-500">{product.owner?.full_name || 'Unknown'}</p>
-                              </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {filteredProducts.map((product) => (
+                    <div key={product.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <img
+                            src={product.images[0] || '/placeholder.jpg'}
+                            alt={product.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                            <p className="text-sm text-gray-600">{product.category} • {product.owner.full_name}</p>
+                            <div className="flex items-center space-x-4 mt-1">
+                              <span className="text-lg font-bold text-indigo-600">${product.price}/day</span>
+                              <Badge variant={product.status === 'available' ? 'default' : 'secondary'}>
+                                {product.status}
+                              </Badge>
                             </div>
-                          </td>
-                          <td className="p-4">
-                            <Badge variant="outline">{product.category}</Badge>
-                          </td>
-                          <td className="p-4">
-                            <span className="font-semibold">${product.price}/day</span>
-                          </td>
-                          <td className="p-4">
-                            <Select
-                              value={product.status}
-                              onValueChange={(value) => handleStatusChange(product.id, value)}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="inactive">Inactive</SelectItem>
-                                <SelectItem value="rented">Rented</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center space-x-1">
-                              <Eye className="w-4 h-4 text-gray-400" />
-                              <span>{product.views || 0}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="text-right text-sm text-gray-500">
+                            <div className="flex items-center">
+                              <Eye className="w-4 h-4 mr-1" />
+                              {product.views}
                             </div>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="w-4 h-4 text-gray-400" />
-                              <span>{product.bookings || 0}</span>
+                            <div className="flex items-center">
+                              <Star className="w-4 h-4 mr-1 text-yellow-400" />
+                              {product.rating.toFixed(1)}
                             </div>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center space-x-2">
-                              <Button size="sm" variant="outline">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleDeleteProduct(product.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                          <Button variant="outline" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleDeleteProduct(product.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-
-                {filteredProducts.length === 0 && (
-                  <div className="text-center py-12">
-                    <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                    <p className="text-gray-600">Create your first product to get started</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Analytics Tab */}
-          <TabsContent value="analytics">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Category Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {['Dresses', 'Jewelries', 'Others'].map((category, index) => {
-                      const count = products.filter(p => p.category === category).length;
-                      const percentage = products.length > 0 ? (count / products.length) * 100 : 0;
-                      return (
-                        <div key={index} className="flex items-center justify-between">
-                          <span className="font-medium">{category}</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-24 h-2 bg-gray-200 rounded-full">
-                              <div 
-                                className="h-2 bg-indigo-500 rounded-full" 
-                                style={{ width: `${percentage}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-sm text-gray-600">{count}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Product Performance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {products
-                      .sort((a, b) => (b.views || 0) - (a.views || 0))
-                      .slice(0, 5)
-                      .map((product) => (
-                        <div key={product.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="text-xl">{product.images?.[0] || '📦'}</div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{product.name}</p>
-                            <p className="text-xs text-gray-500">{product.views || 0} views</p>
-                          </div>
-                          <Badge 
-                            className={`${getStatusColor(product.status)} text-white`}
-                          >
-                            {product.status}
-                          </Badge>
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Activity Tab */}
-          <TabsContent value="activity">
+          {/* Users Tab */}
+          <TabsContent value="users">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
+                <CardTitle>User Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Activity Tracking</h3>
-                  <p className="text-gray-600">Real-time activity monitoring coming soon</p>
+                <div className="space-y-4">
+                  {users.map((user) => (
+                    <div key={user.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <User className="w-6 h-6 text-indigo-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{user.full_name}</h3>
+                            <p className="text-sm text-gray-600">{user.email}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                                {user.role}
+                              </Badge>
+                              <Badge variant={user.verified ? 'default' : 'outline'}>
+                                {user.verified ? 'Verified' : 'Unverified'}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <Star className="w-4 h-4 mr-1 text-yellow-400" />
+                            {user.rating.toFixed(1)}
+                          </div>
+                          <p>Joined {new Date(user.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Orders Tab */}
+          <TabsContent value="orders">
+            <Card>
+              <CardHeader>
+                <CardTitle>Order Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <div key={order.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <img
+                            src={order.product.images[0] || '/placeholder.jpg'}
+                            alt={order.product.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{order.product.name}</h3>
+                            <p className="text-sm text-gray-600">
+                              Order #{order.id.slice(-6)}
+                            </p>
+                            <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+                              <span>${order.total_amount}</span>
+                              <span>{new Date(order.start_date).toLocaleDateString()} - {new Date(order.end_date).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={order.status === 'completed' ? 'default' : 'secondary'}>
+                            {order.status}
+                          </Badge>
+                          <Badge variant={order.payment_status === 'paid' ? 'default' : 'outline'}>
+                            {order.payment_status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
