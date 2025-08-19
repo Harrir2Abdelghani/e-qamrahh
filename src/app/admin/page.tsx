@@ -59,7 +59,8 @@ export default function AdminDashboard() {
   const { user, isAuthenticated, login } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -81,13 +82,21 @@ export default function AdminDashboard() {
     image: '📦'
   });
 
+  // Handle mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Load data on component mount
   useEffect(() => {
+    if (!mounted) return;
+    
     if (!isAuthenticated || user?.role !== 'admin') {
       return;
     }
+    setLoading(true);
     loadData();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, mounted]);
 
   const loadData = () => {
     // Simulate loading real data
@@ -360,6 +369,11 @@ export default function AdminDashboard() {
       default: return 'bg-gray-500';
     }
   };
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   if (!isAuthenticated || user?.role !== 'admin') {
 
