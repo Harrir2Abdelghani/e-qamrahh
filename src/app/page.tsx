@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductModal } from "@/components/ProductModal";
 import { SearchFilters } from "@/components/SearchFilters";
-import { AuthModal } from "@/components/AuthModal";
+
 import { useAuth } from "@/hooks/useAuth";
 import { Product, FilterOptions } from "@/types";
 import { StorageManager, STORAGE_KEYS } from "@/lib/storage";
@@ -103,7 +103,7 @@ function QamrahContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<Partial<FilterOptions>>({});
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -516,11 +516,7 @@ function QamrahContent() {
   };
 
   const handleFavoriteToggle = (productId: string) => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      return;
-    }
-    // Handle favorites logic here
+    // Handle favorites logic here without authentication
   };
 
   const clearFilters = () => {
@@ -641,50 +637,6 @@ function QamrahContent() {
               }`}>
                 Categories
               </a>
-              {isAuthenticated && user?.role === 'admin' && (
-                <a href="/admin" className={`font-medium transition-colors hover:text-indigo-600 ${
-                  isScrolled ? 'text-gray-700' : 'text-white'
-                }`}>
-                  Admin
-                </a>
-              )}
-              
-              {isAuthenticated ? (
-                <div className="flex items-center space-x-4">
-                  <Button variant="ghost" size="sm" className="relative">
-                    <Heart className="w-4 h-4 mr-2" />
-                    Favorites
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                      3
-                    </span>
-                  </Button>
-                  <Button variant="ghost" size="sm" className="relative">
-                    <Bell className="w-4 h-4" />
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                  </Button>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-semibold">
-                        {user?.name?.charAt(0) || 'U'}
-                      </span>
-                    </div>
-                    <span className={`text-sm font-medium ${isScrolled ? 'text-gray-700' : 'text-white'}`}>
-                      {user?.name}
-                    </span>
-                    <Button variant="ghost" size="sm" onClick={signOut}>
-                      <LogOut className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button 
-                  onClick={() => setShowAuthModal(true)}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Join Qamrah
-                </Button>
-              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -713,19 +665,6 @@ function QamrahContent() {
                 <a href="#categories" className="text-gray-600 hover:text-indigo-600 transition-colors px-4 py-2">
                   Categories
                 </a>
-                {isAuthenticated && user?.role === 'admin' && (
-                  <a href="/admin" className="text-gray-600 hover:text-indigo-600 transition-colors px-4 py-2">
-                    Admin
-                  </a>
-                )}
-                {!isAuthenticated && (
-                  <Button 
-                    onClick={() => setShowAuthModal(true)}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white w-full mx-4"
-                  >
-                    Join Qamrah
-                  </Button>
-                )}
               </div>
             </div>
           )}
@@ -1236,11 +1175,11 @@ function QamrahContent() {
           <div className="text-center mt-16">
             <Button
               size="lg"
-              onClick={() => !isAuthenticated ? setShowAuthModal(true) : document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
               className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-lg px-12 py-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300"
             >
               <Zap className="mr-3 w-6 h-6" />
-              {isAuthenticated ? 'Start Renting Now' : 'Get Started Today'}
+              Browse Our Collection
             </Button>
           </div>
         </div>
@@ -1299,11 +1238,11 @@ function QamrahContent() {
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Button
                 size="lg"
-                onClick={() => !isAuthenticated ? setShowAuthModal(true) : document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
                 className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-black font-semibold text-lg px-12 py-6 rounded-2xl shadow-2xl hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-105"
               >
                 <Zap className="mr-3 w-6 h-6" />
-                {isAuthenticated ? 'Start Renting Today' : 'Join Qamrah Now'}
+                Explore Our Products
               </Button>
               <Button
                 size="lg"
@@ -1435,18 +1374,11 @@ function QamrahContent() {
         onClose={() => setSelectedProduct(null)}
         onFavoriteToggle={handleFavoriteToggle}
         isFavorite={selectedProduct ? favorites.includes(selectedProduct.id) : false}
-        isAuthenticated={isAuthenticated}
-        onAuthRequired={() => setShowAuthModal(true)}
+        isAuthenticated={true}
+        onAuthRequired={() => {}}
       />
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={() => {
-          // Refresh the page or update state as needed
-        }}
-      />
+      
     </div>
   );
 }

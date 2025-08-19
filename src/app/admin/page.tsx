@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -272,8 +271,8 @@ export default function AdminDashboard() {
       price: newProduct.price || 0,
       deposit: newProduct.deposit || 0,
       status: 'active',
-      owner: user?.name || 'Admin',
-      ownerId: user?.id || 'admin',
+      owner: 'Admin',
+      ownerId: 'admin',
       location: newProduct.location || '',
       rating: 5.0,
       image: newProduct.image || '📦',
