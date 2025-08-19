@@ -157,23 +157,69 @@ function QamrahContent() {
       const sampleProducts: Product[] = [
         {
           id: '1',
-          name: 'Professional Camera Kit',
-          description: 'Complete photography setup with DSLR camera, multiple lenses, and professional accessories. Perfect for events, portraits, and commercial photography.',
-          category: 'Electronics',
-          price: 75,
+          name: 'Elegant Evening Gown',
+          description: 'Stunning black evening gown perfect for formal events, galas, and special occasions. Designer quality with beautiful detailing.',
+          category: 'Dresses',
+          price: 85,
           deposit: 200,
           status: 'active',
           owner: 'Sarah Chen',
           ownerId: 'owner1',
           location: 'San Francisco, CA',
           rating: 4.9,
-          image: '📷',
-          images: ['📷', '📸', '🎥'],
+          image: '👗',
+          images: ['👗', '✨', '🌟'],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           views: 1234,
           bookings: 89,
-          tags: ['photography', 'professional', 'camera', 'events'],
+          tags: ['evening', 'formal', 'elegant', 'designer'],
+          availability: {
+            startDate: '2024-01-01',
+            endDate: '2024-12-31',
+            unavailableDates: []
+          },
+          featured: true,
+          condition: 'excellent',
+          minRentalDays: 1,
+          maxRentalDays: 3,
+          deliveryOptions: {
+            pickup: true,
+            delivery: true,
+            deliveryFee: 15,
+            deliveryRadius: 25
+          },
+          specifications: {
+            'Size': 'M (adjustable)',
+            'Color': 'Black',
+            'Material': 'Silk and Chiffon',
+            'Designer': 'Premium Collection'
+          },
+          policies: {
+            cancellation: 'Free cancellation up to 24 hours before rental',
+            damage: 'Professional cleaning included',
+            lateFee: 50
+          }
+        },
+        {
+          id: '2',
+          name: 'Diamond Tennis Bracelet',
+          description: 'Exquisite diamond tennis bracelet with genuine diamonds. Perfect for weddings, anniversaries, and luxury events.',
+          category: 'Jewelries',
+          price: 120,
+          deposit: 800,
+          status: 'active',
+          owner: 'Alex Rodriguez',
+          ownerId: 'owner2',
+          location: 'New York, NY',
+          rating: 4.8,
+          image: '💎',
+          images: ['💎', '✨', '💍'],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          views: 892,
+          bookings: 45,
+          tags: ['diamond', 'luxury', 'bracelet', 'wedding'],
           availability: {
             startDate: '2024-01-01',
             endDate: '2024-12-31',
@@ -186,71 +232,26 @@ function QamrahContent() {
           deliveryOptions: {
             pickup: true,
             delivery: true,
-            deliveryFee: 15,
-            deliveryRadius: 25
-          },
-          specifications: {
-            'Camera': 'Canon EOS R5 Mirrorless',
-            'Lenses': '24-70mm f/2.8, 70-200mm f/2.8',
-            'Accessories': 'Professional Tripod, Flash Kit, Memory Cards, Batteries'
-          },
-          policies: {
-            cancellation: 'Free cancellation up to 24 hours before rental',
-            damage: 'Renter responsible for damages beyond normal wear',
-            lateFee: 50
-          }
-        },
-        {
-          id: '2',
-          name: 'MacBook Pro M3 Max',
-          description: 'Latest MacBook Pro with M3 Max chip, 32GB RAM, 1TB SSD. Perfect for video editing, development, and creative work.',
-          category: 'Electronics',
-          price: 120,
-          deposit: 800,
-          status: 'active',
-          owner: 'Alex Rodriguez',
-          ownerId: 'owner2',
-          location: 'New York, NY',
-          rating: 4.8,
-          image: '💻',
-          images: ['💻', '⌨️', '🖱️'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          views: 892,
-          bookings: 45,
-          tags: ['laptop', 'apple', 'professional', 'development'],
-          availability: {
-            startDate: '2024-01-01',
-            endDate: '2024-12-31',
-            unavailableDates: []
-          },
-          featured: true,
-          condition: 'excellent',
-          minRentalDays: 3,
-          maxRentalDays: 30,
-          deliveryOptions: {
-            pickup: true,
-            delivery: true,
             deliveryFee: 25,
             deliveryRadius: 30
           },
           specifications: {
-            'Model': 'MacBook Pro 16-inch M3 Max',
-            'RAM': '32GB Unified Memory',
-            'Storage': '1TB SSD',
-            'Included': 'Charger, USB-C Hub, Mouse'
+            'Material': '18K White Gold',
+            'Diamonds': '2.5 Carat Total Weight',
+            'Length': '7 inches',
+            'Certification': 'GIA Certified'
           },
           policies: {
             cancellation: 'Free cancellation up to 48 hours before rental',
-            damage: 'Full security deposit held until return inspection',
+            damage: 'Full insurance coverage included',
             lateFee: 75
           }
         },
         {
           id: '3',
-          name: 'DJI Mavic Air 2S Drone',
-          description: 'Professional drone with 4K camera, 3-axis gimbal, and advanced flight features. Perfect for aerial photography and videography.',
-          category: 'Electronics',
+          name: 'Vintage Wedding Dress',
+          description: 'Beautiful vintage-inspired wedding dress with intricate lace details. Perfect for bohemian and romantic weddings.',
+          category: 'Dresses',
           price: 95,
           deposit: 400,
           status: 'active',
@@ -258,13 +259,13 @@ function QamrahContent() {
           ownerId: 'owner3',
           location: 'Los Angeles, CA',
           rating: 4.9,
-          image: '🚁',
-          images: ['🚁', '📹', '🎮'],
+          image: '👰',
+          images: ['👰', '💐', '🤍'],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           views: 756,
           bookings: 34,
-          tags: ['drone', 'aerial', 'photography', 'video'],
+          tags: ['wedding', 'vintage', 'lace', 'romantic'],
           availability: {
             startDate: '2024-01-01',
             endDate: '2024-12-31',
@@ -281,36 +282,36 @@ function QamrahContent() {
             deliveryRadius: 20
           },
           specifications: {
-            'Camera': '4K/60fps, 20MP Photos',
-            'Flight Time': '31 minutes',
-            'Range': '12km',
-            'Included': 'Controller, Extra Batteries, Case'
+            'Size': 'S-M (adjustable)',
+            'Style': 'A-Line with Train',
+            'Material': 'Lace and Tulle',
+            'Era': 'Vintage Inspired'
           },
           policies: {
             cancellation: 'Free cancellation up to 24 hours before rental',
-            damage: 'Pilot certification required, full insurance coverage',
+            damage: 'Professional cleaning and preservation',
             lateFee: 100
           }
         },
         {
           id: '4',
-          name: 'Tesla Model S Plaid',
-          description: 'Luxury electric vehicle with autopilot, premium interior, and incredible performance. Perfect for special occasions and business trips.',
-          category: 'Automotive',
-          price: 350,
-          deposit: 2000,
+          name: 'Gold Necklace Set',
+          description: 'Luxurious gold necklace and earring set perfect for special occasions and traditional events.',
+          category: 'Jewelries',
+          price: 75,
+          deposit: 500,
           status: 'active',
           owner: 'Emma Thompson',
           ownerId: 'owner4',
           location: 'Miami, FL',
           rating: 5.0,
-          image: '🚗',
-          images: ['🚗', '⚡', '🔋'],
+          image: '📿',
+          images: ['📿', '✨', '👑'],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           views: 2341,
           bookings: 78,
-          tags: ['tesla', 'electric', 'luxury', 'autopilot'],
+          tags: ['gold', 'traditional', 'necklace', 'earrings'],
           availability: {
             startDate: '2024-01-01',
             endDate: '2024-12-31',
@@ -319,44 +320,44 @@ function QamrahContent() {
           featured: true,
           condition: 'excellent',
           minRentalDays: 1,
-          maxRentalDays: 14,
+          maxRentalDays: 7,
           deliveryOptions: {
             pickup: true,
             delivery: true,
-            deliveryFee: 50,
-            deliveryRadius: 50
+            deliveryFee: 30,
+            deliveryRadius: 25
           },
           specifications: {
-            'Model': 'Tesla Model S Plaid 2024',
-            'Range': '405 miles',
-            'Acceleration': '0-60 mph in 1.99s',
-            'Features': 'Autopilot, Premium Audio, Glass Roof'
+            'Material': '22K Gold Plated',
+            'Set': 'Necklace + Earrings',
+            'Style': 'Traditional Indian',
+            'Weight': '85 grams'
           },
           policies: {
-            cancellation: 'Free cancellation up to 72 hours before rental',
-            damage: 'Valid driver license required, age 25+',
-            lateFee: 200
+            cancellation: 'Free cancellation up to 48 hours before rental',
+            damage: 'Insured for full value',
+            lateFee: 50
           }
         },
         {
           id: '5',
-          name: 'Professional Power Tools Set',
-          description: 'Complete power tools collection including drill, saw, grinder, and more. Perfect for home renovation and construction projects.',
-          category: 'Tools & Equipment',
-          price: 45,
-          deposit: 150,
+          name: 'Professional Camera Equipment',
+          description: 'Complete photography setup with DSLR camera, lenses, and accessories. Perfect for events and professional shoots.',
+          category: 'Others',
+          price: 65,
+          deposit: 300,
           status: 'active',
           owner: 'David Wilson',
           ownerId: 'owner5',
           location: 'Chicago, IL',
           rating: 4.7,
-          image: '🔧',
-          images: ['🔧', '🔨', '⚡'],
+          image: '📷',
+          images: ['📷', '📸', '🎥'],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           views: 567,
           bookings: 23,
-          tags: ['tools', 'construction', 'renovation', 'power-tools'],
+          tags: ['camera', 'photography', 'professional', 'equipment'],
           availability: {
             startDate: '2024-01-01',
             endDate: '2024-12-31',
@@ -369,40 +370,40 @@ function QamrahContent() {
           deliveryOptions: {
             pickup: true,
             delivery: true,
-            deliveryFee: 10,
-            deliveryRadius: 15
+            deliveryFee: 15,
+            deliveryRadius: 20
           },
           specifications: {
-            'Drill': 'Cordless Impact Drill 18V',
-            'Saw': 'Circular Saw + Reciprocating Saw',
-            'Grinder': 'Angle Grinder 9-inch',
-            'Included': 'Tool Box, Batteries, Chargers'
+            'Camera': 'Canon EOS R5',
+            'Lenses': '24-70mm + 50mm',
+            'Accessories': 'Tripod, Flash, Memory Cards',
+            'Bag': 'Professional Camera Bag'
           },
           policies: {
             cancellation: 'Free cancellation up to 24 hours before rental',
-            damage: 'Safety demonstration required before use',
-            lateFee: 30
+            damage: 'Equipment insurance included',
+            lateFee: 40
           }
         },
         {
           id: '6',
-          name: 'Designer Evening Gown Collection',
-          description: 'Elegant designer gowns for special events, galas, and formal occasions. Various sizes and styles available.',
-          category: 'Fashion',
-          price: 85,
-          deposit: 300,
+          name: 'Pearl Jewelry Set',
+          description: 'Elegant freshwater pearl necklace and earring set. Perfect for weddings, graduations, and formal events.',
+          category: 'Jewelries',
+          price: 55,
+          deposit: 250,
           status: 'active',
           owner: 'Isabella Garcia',
           ownerId: 'owner6',
           location: 'Beverly Hills, CA',
-          rating: 4.9,
-          image: '👗',
-          images: ['👗', '💎', '👠'],
+          rating: 4.8,
+          image: '💍',
+          images: ['💍', '🤍', '✨'],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           views: 1123,
           bookings: 56,
-          tags: ['designer', 'formal', 'gown', 'luxury'],
+          tags: ['pearl', 'elegant', 'wedding', 'formal'],
           availability: {
             startDate: '2024-01-01',
             endDate: '2024-12-31',
@@ -411,23 +412,23 @@ function QamrahContent() {
           featured: true,
           condition: 'excellent',
           minRentalDays: 1,
-          maxRentalDays: 3,
+          maxRentalDays: 5,
           deliveryOptions: {
             pickup: true,
             delivery: true,
-            deliveryFee: 30,
+            deliveryFee: 20,
             deliveryRadius: 25
           },
           specifications: {
-            'Designers': 'Versace, Chanel, Dior',
-            'Sizes': 'XS to XL available',
-            'Styles': 'Ball Gown, Mermaid, A-Line',
-            'Included': 'Professional Cleaning, Garment Bag'
+            'Pearls': 'Freshwater AAA Grade',
+            'Size': '7-8mm diameter',
+            'Length': '18 inches',
+            'Clasp': 'Sterling Silver'
           },
           policies: {
-            cancellation: 'Free cancellation up to 48 hours before rental',
-            damage: 'Professional cleaning included, damage fees apply',
-            lateFee: 50
+            cancellation: 'Free cancellation up to 24 hours before rental',
+            damage: 'Professional cleaning included',
+            lateFee: 35
           }
         }
       ];
@@ -529,34 +530,29 @@ function QamrahContent() {
 
   const heroSlides = [
     {
-      title: "Rent Premium Technology",
-      subtitle: "Access the latest gadgets and professional equipment",
+      title: "Rent Designer Dresses",
+      subtitle: "Access premium designer dresses for every occasion",
+      bg: "from-pink-600 to-purple-700",
+      icon: Sparkles
+    },
+    {
+      title: "Luxury Jewelry",
+      subtitle: "Shine with exquisite jewelry pieces",
+      bg: "from-amber-600 to-yellow-700",
+      icon: Award
+    },
+    {
+      title: "Premium Accessories",
+      subtitle: "Complete your look with our curated collection",
       bg: "from-blue-600 to-indigo-700",
-      icon: Smartphone
-    },
-    {
-      title: "Luxury Cars & Vehicles",
-      subtitle: "Drive your dream car for any occasion",
-      bg: "from-purple-600 to-pink-700",
-      icon: Car
-    },
-    {
-      title: "Professional Equipment",
-      subtitle: "Get the tools you need for any project",
-      bg: "from-emerald-600 to-teal-700",
-      icon: Camera
+      icon: Package
     }
   ];
 
   const categories = [
-    { name: "Electronics", icon: Smartphone, count: 2847, color: "from-blue-500 to-cyan-500" },
-    { name: "Automotive", icon: Car, count: 1239, color: "from-red-500 to-orange-500" },
-    { name: "Tools & Equipment", icon: Wrench, count: 1856, color: "from-gray-600 to-gray-700" },
-    { name: "Fashion", icon: Sparkles, count: 967, color: "from-pink-500 to-purple-500" },
-    { name: "Sports & Outdoor", icon: Dumbbell, count: 1345, color: "from-green-500 to-emerald-500" },
-    { name: "Home & Garden", icon: Home, count: 892, color: "from-amber-500 to-yellow-500" },
-    { name: "Party & Events", icon: Gift, count: 623, color: "from-purple-500 to-indigo-500" },
-    { name: "Music & Audio", icon: Music, count: 445, color: "from-teal-500 to-cyan-500" }
+    { name: "Dresses", icon: Sparkles, count: 1247, color: "from-pink-500 to-purple-500" },
+    { name: "Jewelries", icon: Award, count: 892, color: "from-amber-500 to-yellow-500" },
+    { name: "Others", icon: Package, count: 456, color: "from-blue-500 to-cyan-500" }
   ];
 
   const stats = [
@@ -853,7 +849,7 @@ function QamrahContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {categories.map((category, index) => (
               <Card 
                 key={index} 

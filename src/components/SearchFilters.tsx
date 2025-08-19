@@ -45,14 +45,9 @@ export function SearchFilters({ onSearch, onFilter, onClearFilters }: SearchFilt
   };
 
   const categories = [
-    "Electronics",
-    "Tools & Equipment",
-    "Sports & Outdoor",
-    "Party & Events",
-    "Fashion",
-    "Home & Garden",
-    "Automotive",
-    "Books & Media"
+    "Dresses",
+    "Jewelries", 
+    "Others"
   ];
 
   return (
