@@ -56,11 +56,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(true);
       // Mock login - replace with real Supabase auth when connected
       if (email && password) {
+        // Special admin credentials for testing
+        const isAdmin = email === 'admin@qamrah.com' && password === 'admin123';
+        
         const mockUser: AuthUser = {
-          id: '1',
+          id: isAdmin ? 'admin1' : '1',
           email,
-          name: 'Test User',
-          role: 'user',
+          name: isAdmin ? 'Admin User' : 'Test User',
+          role: isAdmin ? 'admin' : 'user',
           verified: true
         };
         setUser(mockUser);
