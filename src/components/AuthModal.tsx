@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Eye, 
-  EyeOff, 
-  Mail, 
-  Lock, 
-  User, 
-  CheckCircle, 
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  CheckCircle,
   AlertCircle,
   Crown,
   Shield,
@@ -48,6 +47,23 @@ export default function AuthModal({ isOpen, onClose, mode, onModeChange }: AuthM
     password: '',
     confirmPassword: ''
   });
+
+  // State for scroll tracking
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) { // Adjust the scroll threshold as needed
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,7 +158,22 @@ export default function AuthModal({ isOpen, onClose, mode, onModeChange }: AuthM
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl p-0 overflow-hidden">
-        <div className="flex min-h-[600px]">
+        {/* Navigation Bar - Apply scroll class */}
+        <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+          isScrolled
+            ? 'bg-white/95 backdrop-blur-xl shadow-lg border-b border-gray-200'
+            : 'bg-transparent'
+        }`}>
+          <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div className="text-2xl font-bold text-purple-600">Qamrah</div>
+            <div className="flex items-center space-x-4">
+              <Button variant="link" onClick={() => onModeChange('login')}>Sign In</Button>
+              <Button onClick={() => onModeChange('signup')}>Get Started</Button>
+            </div>
+          </div>
+        </nav>
+
+        <div className="flex min-h-[600px] pt-16"> {/* Added padding top to account for fixed nav */}
           {/* Left Side - Features */}
           <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 p-8 flex-col justify-center text-white">
             <div className="mb-8">
@@ -151,7 +182,7 @@ export default function AuthModal({ isOpen, onClose, mode, onModeChange }: AuthM
                 Unlock the world of luxury rentals and discover exclusive designer items
               </p>
             </div>
-            
+
             <div className="space-y-6">
               {features.map((feature, index) => (
                 <div key={index} className="flex items-start space-x-4">
@@ -247,8 +278,8 @@ export default function AuthModal({ isOpen, onClose, mode, onModeChange }: AuthM
                     </div>
                   )}
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                     disabled={loading}
                   >
@@ -374,8 +405,8 @@ export default function AuthModal({ isOpen, onClose, mode, onModeChange }: AuthM
                     </div>
                   )}
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                     disabled={loading}
                   >
@@ -400,3 +431,5 @@ export default function AuthModal({ isOpen, onClose, mode, onModeChange }: AuthM
     </Dialog>
   );
 }
+
+export { AuthModal };

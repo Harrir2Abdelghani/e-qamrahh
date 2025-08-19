@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -47,19 +46,20 @@ export interface User {
   email: string;
   full_name: string;
   avatar_url?: string;
-  phone?: string;
   role: 'user' | 'admin';
+  phone?: string;
+  location?: string;
+  bio?: string;
+  created_at: string;
+  updated_at: string;
+  favorites: string[];
+  rental_history: RentalHistory[];
+  total_spent: number;
   rating: number;
   verified: boolean;
-  created_at: string;
-  favorites: string[];
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    zip: string;
-  };
 }
+
+export { User };
 
 export interface Order {
   id: string;
@@ -129,4 +129,12 @@ export interface Notification {
   type: 'order' | 'review' | 'system' | 'promotion';
   read: boolean;
   created_at: string;
+}
+
+// Placeholder for RentalHistory interface as it's used in User but not defined in the original snippet
+interface RentalHistory {
+  // Define properties of RentalHistory here if known
+  order_id: string;
+  start_date: string;
+  end_date: string;
 }

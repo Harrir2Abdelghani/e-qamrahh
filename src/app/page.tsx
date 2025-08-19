@@ -113,6 +113,8 @@ function QamrahContent() {
   const [showDashboard, setShowDashboard] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [cart, setCart] = useState<string[]>([]);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const storage = StorageManager.getInstance();
 
   const { products, loading, incrementViews, addToFavorites, removeFromFavorites } = useProducts();
@@ -223,6 +225,88 @@ function QamrahContent() {
   const handleProductClick = (product: Product) => {
     incrementViews(product.id);
     setSelectedProduct(product);
+  };
+
+  // Hero slides data
+  const heroSlides = [
+    {
+      title: "Rent Premium Items",
+      subtitle: "Premium Collection",
+      icon: Crown,
+      bg: "from-purple-600 to-pink-600"
+    },
+    {
+      title: "Smart Technology",
+      subtitle: "Latest Tech",
+      icon: Zap,
+      bg: "from-blue-600 to-cyan-600"
+    },
+    {
+      title: "Sustainable Future",
+      subtitle: "Eco-Friendly",
+      icon: Globe,
+      bg: "from-emerald-600 to-teal-600"
+    }
+  ];
+
+  // Stats data
+  const stats = [
+    {
+      icon: Package,
+      value: analytics.activeProducts.toLocaleString(),
+      label: "Active Products",
+      trend: "+12%",
+      color: "from-blue-500 to-cyan-500"
+    },
+    {
+      icon: Users,
+      value: analytics.totalUsers.toLocaleString(),
+      label: "Happy Users",
+      trend: "+25%",
+      color: "from-emerald-500 to-teal-500"
+    },
+    {
+      icon: Star,
+      value: analytics.averageRating.toString(),
+      label: "Average Rating",
+      trend: "+0.2",
+      color: "from-amber-500 to-yellow-500"
+    },
+    {
+      icon: TrendingUp,
+      value: analytics.totalBookings.toLocaleString(),
+      label: "Total Bookings",
+      trend: "+18%",
+      color: "from-purple-500 to-pink-500"
+    }
+  ];
+
+  // Categories data
+  const categories = [
+    {
+      name: "Electronics",
+      icon: Smartphone,
+      count: 1247,
+      color: "from-blue-500 to-purple-500"
+    },
+    {
+      name: "Vehicles",
+      icon: Car,
+      count: 892,
+      color: "from-emerald-500 to-teal-500"
+    },
+    {
+      name: "Home & Garden",
+      icon: Home,
+      count: 634,
+      color: "from-amber-500 to-orange-500"
+    }
+  ];
+
+  // Clear filters function
+  const clearFilters = () => {
+    setFilters({});
+    setSearchQuery("");
   };
 
   // Scroll effect for navbar
