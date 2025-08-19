@@ -64,6 +64,9 @@ export default function AdminDashboard() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     name: '',
     description: '',
@@ -336,6 +339,18 @@ export default function AdminDashboard() {
     product.owner.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError('');
+    
+    const success = await login(loginForm.email, loginForm.password);
+    if (!success) {
+      setLoginError('Invalid admin credentials');
+    }
+    setIsLoggingIn(false);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-emerald-500';
@@ -347,21 +362,6 @@ export default function AdminDashboard() {
   };
 
   if (!isAuthenticated || user?.role !== 'admin') {
-    const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-    const [loginError, setLoginError] = useState('');
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-    const handleAdminLogin = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsLoggingIn(true);
-      setLoginError('');
-      
-      const success = await login(loginForm.email, loginForm.password);
-      if (!success) {
-        setLoginError('Invalid admin credentials');
-      }
-      setIsLoggingIn(false);
-    };
 
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
