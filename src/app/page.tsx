@@ -76,7 +76,8 @@ import {
   Activity,
   BarChart3,
   Plus,
-  Minus
+  Minus,
+  Crown
 } from "lucide-react";
 
 export default function QamrahLandingPage() {
